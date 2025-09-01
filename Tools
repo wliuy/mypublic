@@ -99,7 +99,7 @@ function ldnmp_setup() {
     sleep 1
 }
 
-# 99. 安装快捷指令 # <--- 这是新增的整个功能函数
+# 99. 安装快捷指令
 function install_shortcut() {
   # --- 配置 ---
   # 定义脚本在 GitHub 上的 Raw 链接
@@ -124,4 +124,102 @@ function install_shortcut() {
   local install_path="/usr/local/bin/${install_name}"
   echo -e "${C_BLUE}正在从 GitHub 下载最新版脚本到 ${install_path}...${C_RESET}"
   if curl -L "${script_url}" -o "${install_path}"; then
-    echo -e "${C_GREEN}下载成功！${C_RESET
+    echo -e "${C_GREEN}下载成功！${C_RESET}"
+  else
+    echo -e "${C_RED}错误：下载脚本失败，请检查网络连接或URL。${C_RESET}"
+    press_any_key_to_continue
+    return
+  fi
+
+  # 3. 添加执行权限
+  echo -e "${C_BLUE}正在设置执行权限...${C_RESET}"
+  chmod +x "${install_path}"
+
+  # 4. 创建快捷方式的符号链接
+  local shortcut_path="/usr/local/bin/${shortcut_name}"
+  echo -e "${C_BLUE}正在创建快捷命令 '${shortcut_name}' -> '${install_path}'...${C_RESET}"
+  ln -sf "${install_path}" "${shortcut_path}"
+
+  # 5. 提示成功信息
+  echo -e "\n${C_GREEN}🎉 恭喜！快捷方式安装成功！${C_RESET}"
+  echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}source ~/.bashrc${C_RESET} 来刷新环境。"
+  echo -e "之后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
+  press_any_key_to_continue
+}
+
+# 00. 脚本更新
+function update_script() {
+  clear
+  echo -e "${C_CYAN}正在检查脚本更新...${C_RESET}"
+  # 这里的更新逻辑可以和上面的安装逻辑联动
+  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
+  # install_shortcut # 可以直接调用安装函数来覆盖更新
+  press_any_key_to_continue
+}
+
+
+# --- 主菜单显示 ---
+function main_menu() {
+  clear
+  echo -e "${C_CYAN}█▀▀ █░█ █▀▀ █ █░█ █▄▄ █▀▀ ░░ █▀ █░█${C_RESET}"
+  echo -e "${C_CYAN}█▄▄ █▄█ ██▄ █ █▄█ █▄█ ██▄ ▄▄ ▄█ █▀█${C_RESET}"
+  echo -e "${C_BLUE}      科技lion脚本工具箱 v1.0.0      ${C_RESET}"
+  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询      ${C_GREEN}2.${C_RESET} 系统更新"
+  echo -e " ${C_GREEN}3.${C_RESET} 系统清理          ${C_GREEN}4.${C_RESET} 基础工具"
+  echo -e " ${C_GREEN}5.${C_RESET} BBR管理           ${C_GREEN}6.${C_RESET} Docker管理"
+  echo -e " ${C_GREEN}7.${C_RESET} WARP管理          ${C_GREEN}8.${C_RESET} 测试脚本合集"
+  echo -e " ${C_GREEN}9.${C_RESET} 甲骨文云脚本合集  ${C_GREEN}10.${C_RESET} LDNMP建站"
+  echo -e " ${C_GREEN}11.${C_RESET} 应用市场         ${C_GREEN}12.${C_RESET} 后台工作区"
+  echo -e " ${C_GREEN}13.${C_RESET} 系统工具         ${C_GREEN}14.${C_RESET} 服务器集群控制"
+  echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
+  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  echo -e " ${C_GREEN}99.${C_RESET} 安装快捷指令 (y)"
+  echo -e " ${C_GREEN}00.${C_RESET} 脚本更新"
+  echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
+  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  read -p "请输入你的选择: " choice
+}
+
+# --- 主循环 ---
+while true; do
+  main_menu
+  case $choice in
+  1)
+    show_system_info
+    ;;
+  2)
+    update_system
+    ;;
+  3)
+    clean_system
+    ;;
+  4)
+    basic_tools
+    ;;
+  5)
+    manage_bbr
+    ;;
+  6)
+    manage_docker
+    ;;
+  # ... 继续为其他选项添加case ...
+  10)
+    ldnmp_setup
+    ;;
+  99)
+    install_shortcut
+    ;;
+  00)
+    update_script
+    ;;
+  0)
+    echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
+    exit 0
+    ;;
+  *)
+    echo -e "${C_RED}无效的输入，请输入菜单中存在的数字选项！${C_RESET}"
+    press_any_key_to_continue
+    ;;
+  esac
+done
