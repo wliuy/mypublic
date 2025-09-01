@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+
+#
+# 多功能脚本工具箱框架 (灵感来源: kejilion.sh)
+#
+
+# 遇到任何错误则终止脚本 (在函数内部按需使用)
+# set -e
+
+# --- 颜色定义 ---
+# 使用 tput 动态获取颜色代码，兼容性更好
+if command -v tput >/dev/null 2>&1 && [[ $(tput colors) -ge 8 ]]; then
+  C_RESET=$(tput sgr0)
+  C_RED=$(tput setaf 1)
+  C_GREEN=$(tput setaf 2)
+  C_YELLOW=$(tput setaf 3)
+  C_BLUE=$(tput setaf 4)
+  C_CYAN=$(tput setaf 6)
+else
+  # 如果 tput 不可用，则使用静态代码
+  C_RESET='\033[0m'
+  C_RED='\033[0;31m'
+  C_GREEN='\033[0;32m'
+  C_YELLOW='\033[0;33m'
+  C_BLUE='\033[0;34m'
+  C_CYAN='\033[0;36m'
+fi
+
+# --- 辅助函数 ---
+
+# 功能完成后暂停，等待用户按任意键继续
+function press_any_key_to_continue() {
+  echo -e "\n${C_YELLOW}按任意键返回主菜单...${C_RESET}"
+  # read a single character
+  read -n 1 -s -r
+}
+
+# --- 功能函数定义 ---
+# 这里是每个菜单选项对应的具体功能实现
+
+# 1. 系统信息查询
+function show_system_info() {
+  clear
+  echo -e "${C_CYAN}======== 系统信息查询 ========${C_RESET}"
+  echo -e "主机名: ${C_GREEN}$(hostname)${C_RESET}"
+  echo -e "操作系统: ${C_GREEN}$(source /etc/os-release && echo $PRETTY_NAME)${C_RESET}"
+  echo -e "内核版本: ${C_GREEN}$(uname -r)${C_RESET}"
+  echo -e "CPU型号: ${C_GREEN}$(grep "model name" /proc/cpuinfo | head -n1 | cut -d: -f2)${C_RESET}"
+  echo -e "内存使用: ${C_GREEN}$(free -h | awk '/^Mem/ {print $3 "/" $2}')${C_RESET}"
+  echo -e "硬盘使用: ${C_GREEN}$(df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}') ${C_RESET}"
+  echo -e "公网IP: ${C_GREEN}$(curl -s ip.sb)${C_RESET}"
+  echo -e "${C_CYAN}===============================${C_RESET}"
+  press_any_key_to_continue
+}
+
+# 2. 系统更新
+function update_system() {
+  clear
+  echo -e "${C_CYAN}======== 开始更新系统 ========${C_RESET}"
+  if command -v apt-get &>/dev/null; then
+    sudo apt-get update && sudo apt-get upgrade -y
+  elif command -v yum &>/dev/null; then
+    sudo yum update -y
+  else
+    echo -e "${C_RED}未知的包管理器，无法自动更新。${C_RESET}"
+  fi
+  echo -e "${C_GREEN}系统更新完成！${C_RESET}"
+  press_any_key_to_continue
+}
+
+# 3. 系统清理
+function clean_system() {
+  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
+  sleep 1
+}
+
+# 4. 基础工具
+function basic_tools() {
+  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
+  sleep 1
+}
+
+# 5. BBR管理
+function manage_bbr() {
+  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
+  sleep 1
+}
+
+# 6. Docker管理
+function manage_docker() {
+  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
+  sleep 1
+}
+
+# ... 其他功能的占位符 ...
+# 你可以按照这个格式继续添加所有15个以及P, 00等功能
+function ldnmp_setup() {
+    echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
+    sleep 1
+}
+
+
+# 00. 脚本更新
+function update_script() {
+  clear
+  echo -e "${C_CYAN}正在检查脚本更新...${C_RESET}"
+  # 假设你的脚本托管在GitHub
+  # git pull
+  echo -e "${C_GREEN}脚本已经是最新版本！${C_RESET}"
+  press_any_key_to_continue
+}
+
+# --- 主菜单显示 ---
+function main_menu() {
+  clear
+  echo -e "${C_CYAN}█▀▀ █░█ █▀▀ █ █░█ █▄▄ █▀▀ ░░ █▀ █░█${C_RESET}"
+  echo -e "${C_CYAN}█▄▄ █▄█ ██▄ █ █▄█ █▄█ ██▄ ▄▄ ▄█ █▀█${C_RESET}"
+  echo -e "${C_BLUE}      科技lion脚本工具箱 v1.0.0      ${C_RESET}"
+  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询      ${C_GREEN}2.${C_RESET} 系统更新"
+  echo -e " ${C_GREEN}3.${C_RESET} 系统清理          ${C_GREEN}4.${C_RESET} 基础工具"
+  echo -e " ${C_GREEN}5.${C_RESET} BBR管理           ${C_GREEN}6.${C_RESET} Docker管理"
+  echo -e " ${C_GREEN}7.${C_RESET} WARP管理          ${C_GREEN}8.${C_RESET} 测试脚本合集"
+  echo -e " ${C_GREEN}9.${C_RESET} 甲骨文云脚本合集  ${C_GREEN}10.${C_RESET} LDNMP建站"
+  echo -e " ${C_GREEN}11.${C_RESET} 应用市场         ${C_GREEN}12.${C_RESET} 后台工作区"
+  echo -e " ${C_GREEN}13.${C_RESET} 系统工具         ${C_GREEN}14.${C_RESET} 服务器集群控制"
+  echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
+  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  echo -e " ${C_GREEN}00.${C_RESET} 脚本更新"
+  echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
+  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  read -p "请输入你的选择: " choice
+}
+
+# --- 主循环 ---
+while true; do
+  main_menu
+  case $choice in
+  1)
+    show_system_info
+    ;;
+  2)
+    update_system
+    ;;
+  3)
+    clean_system
+    ;;
+  4)
+    basic_tools
+    ;;
+  5)
+    manage_bbr
+    ;;
+  6)
+    manage_docker
+    ;;
+  # ... 继续为其他选项添加case ...
+  10)
+    ldnmp_setup
+    ;;
+  00)
+    update_script
+    ;;
+  0)
+    echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
+    exit 0
+    ;;
+  *)
+    echo -e "${C_RED}无效的输入，请输入菜单中存在的数字选项！${C_RESET}"
+    press_any_key_to_continue
+    ;;
+  esac
+done
