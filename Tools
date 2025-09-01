@@ -99,75 +99,29 @@ function ldnmp_setup() {
     sleep 1
 }
 
-
-# 00. 脚本更新
-function update_script() {
+# 99. 安装快捷指令 # <--- 这是新增的整个功能函数
+function install_shortcut() {
+  # --- 配置 ---
+  # 定义脚本在 GitHub 上的 Raw 链接
+  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/main/mypublic/Tools"
+  # 定义脚本安装到系统后的文件名
+  local install_name="tools"
+  # 定义快捷方式的名称
+  local shortcut_name="y"
+  
   clear
-  echo -e "${C_CYAN}正在检查脚本更新...${C_RESET}"
-  # 假设你的脚本托管在GitHub
-  # git pull
-  echo -e "${C_GREEN}脚本已经是最新版本！${C_RESET}"
-  press_any_key_to_continue
-}
+  echo -e "${C_CYAN}开始安装快捷方式 '${shortcut_name}'...${C_RESET}"
 
-# --- 主菜单显示 ---
-function main_menu() {
-  clear
-  echo -e "${C_CYAN}█▀▀ █░█ █▀▀ █ █░█ █▄▄ █▀▀ ░░ █▀ █░█${C_RESET}"
-  echo -e "${C_CYAN}█▄▄ █▄█ ██▄ █ █▄█ █▄█ ██▄ ▄▄ ▄█ █▀█${C_RESET}"
-  echo -e "${C_BLUE}      科技lion脚本工具箱 v1.0.0      ${C_RESET}"
-  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询      ${C_GREEN}2.${C_RESET} 系统更新"
-  echo -e " ${C_GREEN}3.${C_RESET} 系统清理          ${C_GREEN}4.${C_RESET} 基础工具"
-  echo -e " ${C_GREEN}5.${C_RESET} BBR管理           ${C_GREEN}6.${C_RESET} Docker管理"
-  echo -e " ${C_GREEN}7.${C_RESET} WARP管理          ${C_GREEN}8.${C_RESET} 测试脚本合集"
-  echo -e " ${C_GREEN}9.${C_RESET} 甲骨文云脚本合集  ${C_GREEN}10.${C_RESET} LDNMP建站"
-  echo -e " ${C_GREEN}11.${C_RESET} 应用市场         ${C_GREEN}12.${C_RESET} 后台工作区"
-  echo -e " ${C_GREEN}13.${C_RESET} 系统工具         ${C_GREEN}14.${C_RESET} 服务器集群控制"
-  echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
-  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}00.${C_RESET} 脚本更新"
-  echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
-  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
-  read -p "请输入你的选择: " choice
-}
-
-# --- 主循环 ---
-while true; do
-  main_menu
-  case $choice in
-  1)
-    show_system_info
-    ;;
-  2)
-    update_system
-    ;;
-  3)
-    clean_system
-    ;;
-  4)
-    basic_tools
-    ;;
-  5)
-    manage_bbr
-    ;;
-  6)
-    manage_docker
-    ;;
-  # ... 继续为其他选项添加case ...
-  10)
-    ldnmp_setup
-    ;;
-  00)
-    update_script
-    ;;
-  0)
-    echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
-    exit 0
-    ;;
-  *)
-    echo -e "${C_RED}无效的输入，请输入菜单中存在的数字选项！${C_RESET}"
+  # 1. 检查 root 权限
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo -e "${C_RED}错误：此安装需要 root 权限才能将脚本放入 /usr/local/bin/${C_RESET}"
+    echo -e "${C_YELLOW}请尝试使用 'sudo bash <(curl...)' 来运行此脚本的安装选项。${C_RESET}"
     press_any_key_to_continue
-    ;;
-  esac
-done
+    return
+  fi
+
+  # 2. 下载脚本到 /usr/local/bin
+  local install_path="/usr/local/bin/${install_name}"
+  echo -e "${C_BLUE}正在从 GitHub 下载最新版脚本到 ${install_path}...${C_RESET}"
+  if curl -L "${script_url}" -o "${install_path}"; then
+    echo -e "${C_GREEN}下载成功！${C_RESET
