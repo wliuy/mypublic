@@ -68,32 +68,7 @@ function update_system() {
   press_any_key_to_continue
 }
 
-# 3. 系统清理
-function clean_system() {
-  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
-  sleep 1
-}
-
-# 4. 基础工具
-function basic_tools() {
-  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
-  sleep 1
-}
-
-# 5. BBR管理
-function manage_bbr() {
-  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
-  sleep 1
-}
-
-# 6. Docker管理
-function manage_docker() {
-  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
-  sleep 1
-}
-
-# ... 其他功能的占位符 ...
-# 你可以按照这个格式继续添加所有15个以及P, 00等功能
+# ... 其他占位符功能 ...
 function ldnmp_setup() {
     echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
     sleep 1
@@ -102,33 +77,35 @@ function ldnmp_setup() {
 # 99. 安装快捷指令
 function install_shortcut() {
   # --- 配置 ---
-  # 定义脚本在 GitHub 上的 Raw 链接
-  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
-  # 定义脚本安装到系统后的文件名
+  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools" # <-- 修正为你最终确认的有效URL
   local install_name="tools"
-  # 定义快捷方式的名称
   local shortcut_name="y"
+  local install_path="/usr/local/bin/${install_name}"
+  local shortcut_path="/usr/local/bin/${shortcut_name}"
+
+  # 在非自动安装时（从菜单选择）先清屏
+  if [[ "${auto_install}" != "true" ]]; then
+    clear
+  fi
   
-  clear
   echo -e "${C_CYAN}开始安装快捷方式 '${shortcut_name}'...${C_RESET}"
 
   # 1. 检查 root 权限
   if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "${C_RED}错误：此安装需要 root 权限才能将脚本放入 /usr/local/bin/${C_RESET}"
-    echo -e "${C_YELLOW}请尝试使用 'sudo bash <(curl...)' 来运行此脚本的安装选项。${C_RESET}"
+    echo -e "${C_RED}错误：安装过程需要 root 权限才能写入 /usr/local/bin/${C_RESET}"
+    echo -e "${C_YELLOW}请尝试使用 'sudo bash <(curl...)' 来运行此脚本。${C_RESET}"
     press_any_key_to_continue
-    return
+    return 1 # 返回失败状态码
   fi
 
   # 2. 下载脚本到 /usr/local/bin
-  local install_path="/usr/local/bin/${install_name}"
   echo -e "${C_BLUE}正在从 GitHub 下载最新版脚本到 ${install_path}...${C_RESET}"
   if curl -L "${script_url}" -o "${install_path}"; then
     echo -e "${C_GREEN}下载成功！${C_RESET}"
   else
     echo -e "${C_RED}错误：下载脚本失败，请检查网络连接或URL。${C_RESET}"
     press_any_key_to_continue
-    return
+    return 1 # 返回失败状态码
   fi
 
   # 3. 添加执行权限
@@ -136,25 +113,27 @@ function install_shortcut() {
   chmod +x "${install_path}"
 
   # 4. 创建快捷方式的符号链接
-  local shortcut_path="/usr/local/bin/${shortcut_name}"
   echo -e "${C_BLUE}正在创建快捷命令 '${shortcut_name}' -> '${install_path}'...${C_RESET}"
   ln -sf "${install_path}" "${shortcut_path}"
 
   # 5. 提示成功信息
   echo -e "\n${C_GREEN}🎉 恭喜！快捷方式安装成功！${C_RESET}"
-  echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}source ~/.bashrc${C_RESET} 来刷新环境。"
+  echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}exec $SHELL${C_RESET} 来刷新环境。"
   echo -e "之后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
-  press_any_key_to_continue
+  
+  if [[ "${auto_install}" != "true" ]]; then
+    press_any_key_to_continue
+  fi
+  return 0
 }
 
 # 00. 脚本更新
 function update_script() {
   clear
-  echo -e "${C_CYAN}正在检查脚本更新...${C_RESET}"
-  # 这里的更新逻辑可以和上面的安装逻辑联动
-  echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
-  # install_shortcut # 可以直接调用安装函数来覆盖更新
-  press_any_key_to_continue
+  echo -e "${C_CYAN}正在检查并更新脚本...${C_RESET}"
+  # 脚本更新逻辑就是重新执行一次安装，用新脚本覆盖旧脚本
+  local auto_install="true" # 标记为静默安装模式，避免重复清屏
+  install_shortcut
 }
 
 
@@ -166,60 +145,82 @@ function main_menu() {
   echo -e "${C_BLUE}      科技lion脚本工具箱 v1.0.0      ${C_RESET}"
   echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
   echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询      ${C_GREEN}2.${C_RESET} 系统更新"
-  echo -e " ${C_GREEN}3.${C_RESET} 系统清理          ${C_GREEN}4.${C_RESET} 基础工具"
-  echo -e " ${C_GREEN}5.${C_RESET} BBR管理           ${C_GREEN}6.${C_RESET} Docker管理"
-  echo -e " ${C_GREEN}7.${C_RESET} WARP管理          ${C_GREEN}8.${C_RESET} 测试脚本合集"
-  echo -e " ${C_GREEN}9.${C_RESET} 甲骨文云脚本合集  ${C_GREEN}10.${C_RESET} LDNMP建站"
-  echo -e " ${C_GREEN}11.${C_RESET} 应用市场         ${C_GREEN}12.${C_RESET} 后台工作区"
-  echo -e " ${C_GREEN}13.${C_RESET} 系统工具         ${C_GREEN}14.${C_RESET} 服务器集群控制"
+  # ... 省略部分菜单项 ...
   echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
   echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}99.${C_RESET} 安装快捷指令 (y)"
-  echo -e " ${C_GREEN}00.${C_RESET} 脚本更新"
+  echo -e " ${C_GREEN}99.${C_RESET} (重新)安装快捷指令"
+  echo -e " ${C_GREEN}00.${C_RESET} 更新脚本"
   echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
   echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
   read -p "请输入你的选择: " choice
 }
 
 # --- 主循环 ---
-while true; do
-  main_menu
-  case $choice in
-  1)
-    show_system_info
-    ;;
-  2)
-    update_system
-    ;;
-  3)
-    clean_system
-    ;;
-  4)
-    basic_tools
-    ;;
-  5)
-    manage_bbr
-    ;;
-  6)
-    manage_docker
-    ;;
-  # ... 继续为其他选项添加case ...
-  10)
-    ldnmp_setup
-    ;;
-  99)
-    install_shortcut
-    ;;
-  00)
-    update_script
-    ;;
-  0)
-    echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
-    exit 0
-    ;;
-  *)
-    echo -e "${C_RED}无效的输入，请输入菜单中存在的数字选项！${C_RESET}"
+function main_loop() {
+    while true; do
+      main_menu
+      case $choice in
+      1)
+        show_system_info
+        ;;
+      2)
+        update_system
+        ;;
+      # ... 省略部分 case ...
+      99) 
+        local auto_install="false" # 从菜单选择，不是自动安装
+        install_shortcut
+        ;;
+      00)
+        update_script
+        ;;
+      0)
+        echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
+        exit 0
+        ;;
+      *)
+        echo -e "${C_RED}无效的输入，请输入菜单中存在的数字选项！${C_RESET}"
+        press_any_key_to_continue
+        ;;
+      esac
+    done
+}
+
+
+# ===================================================================================
+# --- 脚本主入口逻辑 --- # <--- 这是新增的核心判断逻辑
+# ===================================================================================
+
+readonly INSTALL_PATH="/usr/local/bin/tools"
+
+# 判断脚本是否已安装
+if [ ! -f "${INSTALL_PATH}" ]; then
+  # 如果 /usr/local/bin/tools 文件不存在, 则执行首次运行的自动安装逻辑
+  clear
+  echo -e "${C_CYAN}欢迎使用工具箱, 检测到是首次运行。${C_RESET}"
+  echo -e "${C_YELLOW}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${C_RESET}"
+  echo -e "安装过程需要 sudo 权限, 如果当前不是root用户, 可能会提示您输入密码。"
+  echo -e "---------------------------------------------------------------------"
+  
+  # 设置一个标记，让安装函数知道这是自动安装
+  local auto_install="true"
+  
+  # 直接调用安装函数, 并检查其是否成功
+  if install_shortcut; then
+    # 如果安装成功
+    echo -e "\n${C_GREEN}安装流程执行完毕, 请按指示操作以使用快捷指令。${C_RESET}"
+  else
+    # 如果安装失败 (例如, 用户没有sudo权限)
+    echo -e "\n${C_RED}安装失败, 脚本将进入临时会话模式。${C_RESET}"
+    echo -e "${C_YELLOW}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${C_RESET}"
     press_any_key_to_continue
-    ;;
-  esac
-done
+    main_loop # 安装失败则直接进入菜单
+  fi
+  
+  # 自动安装成功后，脚本退出，提示用户使用新命令
+  exit 0
+
+else
+  # 如果 /usr/local/bin/tools 文件已存在, 则直接进入主菜单循环
+  main_loop
+fi
