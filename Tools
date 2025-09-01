@@ -103,7 +103,7 @@ function ldnmp_setup() {
 function install_shortcut() {
   # --- 配置 ---
   # 定义脚本在 GitHub 上的 Raw 链接
-  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/main/mypublic/Tools"
+  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
   # 定义脚本安装到系统后的文件名
   local install_name="tools"
   # 定义快捷方式的名称
