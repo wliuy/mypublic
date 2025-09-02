@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox - 最终完善版
+# AYANG's Toolbox (智能更新版)
 #
 
 # --- 全局配置 ---
-# 脚本的 GitHub Raw 链接，更新和安装都将使用这个地址
-# 如果你移动了文件，只需要修改下面这一行即可
+readonly SCRIPT_VERSION="1.0.5" # <--- 新增版本号，每次更新功能时可以修改它
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -132,7 +131,7 @@ function docker_management() {
     sleep 1
 }
 
-# (核心功能) 安装/更新快捷指令
+# (核心功能) 安装快捷指令
 function install_shortcut() {
   local install_name="tools"
   local shortcut_name="y"
@@ -159,7 +158,6 @@ function install_shortcut() {
 
   echo -e "${gl_lan}正在设置执行权限...${gl_bai}"; chmod +x "${install_path}"
   echo -e "${gl_lan}正在创建快捷命令 (符号链接)...${gl_bai}"; ln -sf "${install_path}" "${shortcut_path}"
-  
   sed -i "/^alias ${shortcut_name}=/d" "/root/.bashrc" > /dev/null 2>&1
   
   echo -e "\n${gl_lv}🎉 恭喜！操作成功！${gl_bai}"
@@ -168,19 +166,39 @@ function install_shortcut() {
       echo -e "下次登录后, 你就可以在任何地方直接输入 '${gl_huang}${shortcut_name}${gl_bai}' 来运行此工具箱了。"
   else
       echo -e "现在你可以在任何地方直接输入 '${gl_huang}${shortcut_name}${gl_bai}' 来运行此工具箱了。"
-      press_any_key_to_continue
   fi
   return 0
 }
 
-# 00. 脚本更新 # <--- 更新逻辑已优化
+# 00. 脚本更新 (逻辑已重写)
 function update_script() {
   clear
-  echo -e "${gl_kjlan}正在检查并更新脚本...${gl_bai}"
-  # 将 auto_install 设为 true, 让安装函数知道这是自动过程,從而跳过按键等待
-  local auto_install="true"
-  install_shortcut
-  sleep 2 # 短暂暂停，让用户可以看到成功提示
+  echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
+  
+  # 从远程脚本中提取版本号
+  local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | cut -d'"' -f2)
+
+  if [ -z "$remote_version" ]; then
+    echo -e "${gl_hong}获取远程版本失败，请检查网络或链接。${gl_bai}"
+    press_any_key_to_continue
+    return
+  fi
+
+  echo -e "当前版本: ${gl_huang}v${SCRIPT_VERSION}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
+
+  if [ "$SCRIPT_VERSION" = "$remote_version" ]; then
+    echo -e "\n${gl_lv}已经是最新版本，无需更新！${gl_bai}"
+  else
+    echo -e "\n${gl_huang}发现新版本，是否立即更新？${gl_bai}"
+    read -p "(y/N): " confirm
+    if [[ "${confirm,,}" == "y" ]]; then
+      local auto_install="false" # 设为false，让安装函数显示完整提示和暂停
+      install_shortcut
+    else
+      echo -e "${gl_yellow}操作已取消。${gl_bai}"
+    fi
+  fi
+  press_any_key_to_continue
 }
 
 # 000. 卸载脚本
@@ -193,35 +211,19 @@ function uninstall_script() {
   local install_path="/usr/local/bin/${install_name}"
   local shortcut_path="/usr/local/bin/${shortcut_name}"
 
-  if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}"
-    press_any_key_to_continue
-    return
-  fi
-
-  if [ ! -f "${install_path}" ] && [ ! -L "${shortcut_path}" ]; then
-      echo -e "${gl_huang}脚本未安装或文件不存在，无需卸载。${gl_bai}"
-      press_any_key_to_continue
-      return
-  fi
+  if [[ "$(id -u)" -ne 0 ]]; then echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}"; press_any_key_to_continue; return; fi
+  if [ ! -f "${install_path}" ] && [ ! -L "${shortcut_path}" ]; then echo -e "${gl_huang}脚本未安装或文件不存在，无需卸载。${gl_bai}"; press_any_key_to_continue; return; fi
 
   echo -e "${gl_hong}警告：这将从系统中永久删除脚本和 '${shortcut_name}' 快捷方式。${gl_bai}"
   read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
-  if [[ "${confirm,,}" != "y" ]]; then
-      echo -e "\n${gl_huang}操作已取消。${gl_bai}"
-      press_any_key_to_continue
-      return
-  fi
+  if [[ "${confirm,,}" != "y" ]]; then echo -e "\n${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue; return; fi
   
   echo -e "\n${gl_lan}正在移除快捷方式 (符号链接): ${shortcut_path}...${gl_bai}"; rm -f "${shortcut_path}"
   echo -e "${gl_lan}正在移除脚本主体: ${install_path}...${gl_bai}"; rm -f "${install_path}"
   sed -i "/^alias ${shortcut_name}=/d" "/root/.bashrc" > /dev/null 2>&1
 
   echo -e "\n${gl_lv}✅ 卸载完成！${gl_bai}"
-  echo -e "所有相关文件和快捷方式已被移除。"
-  echo -e "脚本即将退出。"
-  sleep 3
-  exit 0
+  echo -e "所有相关文件和快捷方式已被移除。"; echo -e "脚本即将退出。"; sleep 3; exit 0
 }
 
 # --- 主菜单显示 ---
@@ -235,7 +237,7 @@ function main_menu() {
   echo -e "   ██║  ██║   ██║   ██║  ██║██║ ╚████║╚██████╔╝"
   echo -e "   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
   echo -e "${gl_bai}"
-  echo -e "${gl_lan}               AYANG's Toolbox v1.0.5               ${gl_bai}"
+  echo -e "${gl_lan}               AYANG's Toolbox v${SCRIPT_VERSION}               ${gl_bai}"
   echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
   echo -e "${gl_kjlan}1.  ${gl_bai}系统信息查询"
   echo -e "${gl_kjlan}2.  ${gl_bai}系统更新"
@@ -275,7 +277,6 @@ readonly INSTALL_PATH="/usr/local/bin/tools"
 
 # 判断脚本是否已安装
 if [ ! -f "${INSTALL_PATH}" ]; then
-  # 如果文件不存在, 则执行首次运行的自动安装逻辑
   clear
   echo -e "${gl_kjlan}欢迎使用 AYANG's Toolbox, 检测到是首次运行。${gl_bai}"
   echo -e "${gl_huang}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${gl_bai}"
