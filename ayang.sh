@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.5 (Lucky访问路径最终修复与提示)
+# AYANG's Toolbox v1.3.6 (新增FileBrowser应用)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.5"
+readonly SCRIPT_VERSION="1.3.6"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -60,7 +60,6 @@ install() {
 remove() {
 	if [ $# -eq 0 ]; then
 		echo "未提供软件包参数!"
-		return 1
 	fi
 
 	for package in "$@"; do
@@ -282,7 +281,6 @@ function app_management() {
         local public_ip=$(curl -s https://ipinfo.io/ip)
         local data_dir="/docker/goodluck"
 
-        # 检查 Lucky 容器是否已存在
         if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
             echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"
             echo -e "访问地址通常为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
@@ -293,7 +291,6 @@ function app_management() {
             return
         fi
 
-        # 安装流程
         echo -e "${gl_lan}正在创建数据目录 ${data_dir}...${gl_bai}"; mkdir -p ${data_dir}
         echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"; docker pull gdy666/lucky
         echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -v ${data_dir}:/goodluck gdy666/lucky
@@ -307,6 +304,76 @@ function app_management() {
             echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
     }
+    
+    function install_filebrowser() {
+        clear; echo -e "${gl_kjlan}正在安装 FileBrowser...${gl_bai}";
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+        if docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
+            echo -e "\n${gl_huang}FileBrowser 容器已存在，无需重复安装。${gl_bai}"
+            local public_ip=$(curl -s https://ipinfo.io/ip)
+            echo -e "你可以通过 ${gl_lv}http://${public_ip}:5566${gl_bai} 来访问。"
+            return
+        fi
+
+        echo -e "${gl_lan}正在创建本地目录...${gl_bai}"
+        mkdir -p /wliuy/filebrowser/database
+        mkdir -p /wliuy/filebrowser/config
+        chown -R root:root /wliuy/filebrowser
+
+        echo -e "${gl_lan}正在拉取 FileBrowser 镜像并启动容器...${gl_bai}"
+        docker run -d --name filebrowser --restart always \
+          -u 0:0 \
+          -v /wliuy/filebrowser/files:/srv \
+          -v /wliuy/filebrowser/database:/database \
+          -v /wliuy/filebrowser/config:/config \
+          -p 5566:80 \
+          filebrowser/filebrowser
+
+        sleep 5
+        if docker ps -q -f name=^filebrowser$; then
+            local public_ip=$(curl -s https://ipinfo.io/ip)
+            local log_output=$(docker logs filebrowser 2>&1 | tail -n 10)
+            local username="admin"
+            local password="admin"
+            local access_url="http://${public_ip}:5566"
+
+            echo -e "\n${gl_lv}FileBrowser 安装成功！${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
+            echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "\n${gl_hui}容器最新日志（最后几行）: ${gl_bai}"
+            echo "${log_output}"
+        else
+            echo -e "${gl_hong}FileBrowser 容器启动失败，请检查 Docker 日志。${gl_bai}"
+        fi
+    }
+
+    function uninstall_filebrowser() {
+        clear; echo -e "${gl_kjlan}正在卸载 FileBrowser...${gl_bai}"
+        if ! docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
+            echo -e "${gl_huang}未找到 FileBrowser 容器，无需卸载。${gl_bai}"; return;
+        fi
+        
+        echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
+        echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
+        read -p "如确认继续，请输入 'y' : " confirm
+        if [[ "${confirm,,}" != "y" ]]; then echo -e "${gl_huang}操作已取消。${gl_bai}"; return; fi
+
+        echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
+        docker stop filebrowser && docker rm filebrowser
+
+        echo -e "${gl_lan}正在删除 filebrowser/filebrowser 镜像...${gl_bai}"
+        docker rmi filebrowser/filebrowser
+
+        echo -e "${gl_lan}正在删除本地数据目录 /wliuy/filebrowser...${gl_bai}"
+        rm -rf /wliuy/filebrowser
+
+        echo -e "${gl_lv}✅ FileBrowser 已被彻底卸载。${gl_bai}"
+    }
+
     function uninstall_lucky() {
         clear; echo -e "${gl_kjlan}正在卸载 Lucky 反代...${gl_bai}"
         if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return; fi
@@ -318,14 +385,15 @@ function app_management() {
         echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
         echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
     }
+
     while true; do
-        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  1. Lucky 反代"; echo "  2. Uptime Kuma (监控工具)"; echo -e "  ${gl_hui}...更多应用待添加...${gl_bai}"; echo; echo "卸载:"; echo "  11. 卸载 Lucky 反代"; echo "  12. 卸载 Uptime Kuma"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  1. Lucky 反代"; echo "  2. FileBrowser (文件管理)"; echo -e "  ${gl_hui}...更多应用待添加...${gl_bai}"; echo; echo "卸载:"; echo "  11. 卸载 Lucky 反代"; echo "  12. 卸载 FileBrowser"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
             1) install_lucky; press_any_key_to_continue ;;
-            2) echo "安装 Uptime Kuma 的逻辑将在这里实现..."; press_any_key_to_continue ;;
+            2) install_filebrowser; press_any_key_to_continue ;;
             11) uninstall_lucky; press_any_key_to_continue ;;
-            12) echo "卸载 Uptime Kuma 的逻辑将在这里实现..."; press_any_key_to_continue ;;
+            12) uninstall_filebrowser; press_any_key_to_continue ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
