@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.2 (功能修复版 - Lucky访问路径优化)
+# AYANG's Toolbox v1.3.5 (Lucky访问路径最终修复与提示)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.1"
+readonly SCRIPT_VERSION="1.3.5"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -279,31 +279,30 @@ function app_management() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
         if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
         
+        local public_ip=$(curl -s https://ipinfo.io/ip)
+        local data_dir="/docker/goodluck"
+
         # 检查 Lucky 容器是否已存在
         if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
-            local public_ip=$(curl -s https://ipinfo.io/ip)
-            local config_file="/docker/goodluck/lucky.conf"
-            local web_port="16601"
-            local entry_path=""
-
-            # 优化：使用更健壮的方式从配置文件中读取 web_port 和 entry_path
-            if [ -f "$config_file" ]; then
-                web_port=$(grep -E '^\s*web_port' "$config_file" | awk -F'=' '{print $2}' | tr -d '[:space:]')
-                entry_path=$(grep -E '^\s*entry_path' "$config_file" | awk -F'=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '"')
-            fi
-            
             echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"
-            echo -e "你可以通过 ${gl_lv}http://${public_ip}:${web_port}${entry_path}${gl_bai} 来访问。"
+            echo -e "访问地址通常为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
+            echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
+            echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
+            echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
+            echo -e "重置后，你可以在首次登录时重新设置密码和端口。"
             return
         fi
 
-        echo -e "${gl_lan}正在创建数据目录 /docker/goodluck...${gl_bai}"; mkdir -p /docker/goodluck
+        # 安装流程
+        echo -e "${gl_lan}正在创建数据目录 ${data_dir}...${gl_bai}"; mkdir -p ${data_dir}
         echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"; docker pull gdy666/lucky
-        echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -p 16601:16601 -v /docker/goodluck:/goodluck gdy666/lucky
+        echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -v ${data_dir}:/goodluck gdy666/lucky
+        
         sleep 3
         if docker ps -q -f name=^lucky$; then
-            local public_ip=$(curl -s https://ipinfo.io/ip)
-            echo -e "${gl_lv}Lucky 安装成功！访问 http://${public_ip}:16601${gl_bai}"
+            echo -e "${gl_lv}Lucky 安装成功！${gl_bai}"
+            echo -e "Lucky 容器使用 ${gl_huang}--net=host${gl_bai} 模式，端口由配置文件 lucky.conf 决定。"
+            echo -e "默认访问地址为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
         else
             echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
@@ -378,7 +377,7 @@ EOF
     function docker_ps() {
         while true; do
             clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
-            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新的容器"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "2. 启动指定容器            6. 启动所有容器"; echo "3. 停止指定容器            7. 停止所有容器"; echo "4. 删除指定容器            8. 删除所有容器"; echo "5. 重启指定容器            9. 重启所有容器"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "11. 进入指定容器           12. 查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新的容器"; echo "2. 启动指定容器            6. 启动所有容器"; echo "3. 停止指定容器            7. 停止所有容器"; echo "4. 删除指定容器            8. 删除所有容器"; echo "5. 重启指定容器            9. 重启所有容器"; echo "11. 进入指定容器           12. 查看容器日志"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入创建命令: " dockername; $dockername ;;
