@@ -118,13 +118,16 @@ function install_shortcut() {
   ln -sf "${install_path}" "${shortcut_path}"
 
   # 5. 提示成功信息
-  echo -e "\n${C_GREEN}🎉 恭喜！操作成功！${C_RESET}"
-  echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}exec $SHELL${C_RESET} 来刷新环境。"
-  echo -e "之后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
-  
-  if [[ "${auto_install}" != "true" ]]; then
+  if [[ "${auto_install}" == "true" ]]; then
+    echo -e "\n${C_GREEN}🎉 恭喜！快捷方式安装成功！${C_RESET}"
+    echo -e "下次登录后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
+  else
+    echo -e "\n${C_GREEN}🎉 恭喜！操作成功！${C_RESET}"
+    echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}exec $SHELL${C_RESET} 来刷新环境。"
+    echo -e "之后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
     press_any_key_to_continue
   fi
+  
   return 0
 }
 
@@ -133,7 +136,7 @@ function update_script() {
   clear
   echo -e "${C_CYAN}正在检查并更新脚本...${C_RESET}"
   # 脚本更新逻辑就是重新执行一次安装，用新脚本覆盖旧脚本
-  local auto_install="true" # 标记为静默安装模式，避免重复清屏
+  local auto_install="false" # 设置为false，让它显示完整的成功提示和“按任意键继续”
   install_shortcut
 }
 
@@ -241,12 +244,12 @@ function main_loop() {
 
 
 # ===================================================================================
-# --- 脚本主入口逻辑 ---
+# --- 脚本主入口逻辑 --- # <--- 这是修改后的新逻辑
 # ===================================================================================
 
 readonly INSTALL_PATH="/usr/local/bin/tools"
 
-# 判断脚本是否已安装
+# 判断脚本是否需要首次安装
 if [ ! -f "${INSTALL_PATH}" ]; then
   # 如果 /usr/local/bin/tools 文件不存在, 则执行首次运行的自动安装逻辑
   clear
@@ -258,22 +261,20 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   # 设置一个标记，让安装函数知道这是自动安装
   local auto_install="true"
   
-  # 直接调用安装函数, 并检查其是否成功
-  if install_shortcut; then
-    # 如果安装成功
-    echo -e "\n${C_GREEN}安装流程执行完毕, 请按指示操作以使用快捷指令。${C_RESET}"
-  else
-    # 如果安装失败 (例如, 用户没有sudo权限)
-    echo -e "\n${C_RED}安装失败, 脚本将进入临时会话模式。${C_RESET}"
+  # 直接调用安装函数, 如果失败则直接进入菜单
+  if ! install_shortcut; then
+    echo -e "\n${C_RED}自动安装失败, 脚本将进入临时会话模式。${C_RESET}"
     echo -e "${C_YELLOW}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${C_RESET}"
     press_any_key_to_continue
-    main_loop # 安装失败则直接进入菜单
+    main_loop 
+    exit 1
   fi
   
-  # 自动安装成功后，脚本退出，提示用户使用新命令
-  exit 0
-
-else
-  # 如果 /usr/local/bin/tools 文件已存在, 则直接进入主菜单循环
-  main_loop
+  # 自动安装成功后，提示并继续进入主菜单
+  echo -e "\n${C_GREEN}安装流程执行完毕！${C_RESET}"
+  echo -e "${C_YELLOW}正在继续进入主菜单...${C_RESET}"
+  sleep 3
 fi
+
+# 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
+main_loop
