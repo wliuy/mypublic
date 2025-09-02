@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.2.0 (功能完整最终版)
+# AYANG's Toolbox v1.2.1 (功能完整最终版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.2.0"
+readonly SCRIPT_VERSION="1.2.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -197,7 +197,7 @@ function system_tools() {
             echo -e "$dns_config" > /etc/resolv.conf; echo "DNS 已更新！"; sleep 1
         done
     }
-    function add_swap() {
+    function add_swap_menu() {
         function _do_add_swap() {
             local swap_size=$1
             echo "正在创建新的swap文件..."; fallocate -l ${swap_size}M /swapfile_new; chmod 600 /swapfile_new; mkswap /swapfile_new
@@ -222,12 +222,36 @@ function system_tools() {
             esac
         done
     }
-    function set_timezone() {
-        timedatectl set-timezone Asia/Shanghai
-        echo "系统时区已设置为 Asia/Shanghai"
+    function timezone_menu() {
+        function _current_timezone() {
+            if grep -q 'Alpine' /etc/issue 2>/dev/null; then date +"%Z %z"; else timedatectl | grep "Time zone" | awk '{print $3}'; fi
+        }
+        function _set_timedate() {
+            if grep -q 'Alpine' /etc/issue 2>/dev/null; then install tzdata; cp /usr/share/zoneinfo/${1} /etc/localtime; else timedatectl set-timezone ${1}; fi
+        }
+        while true; do
+            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间             2.  中国香港时间"; echo "3.  日本东京时间             4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间             12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间             22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) _set_timedate Asia/Shanghai ;;
+                2) _set_timedate Asia/Hong_Kong ;;
+                3) _set_timedate Asia/Tokyo ;;
+                4) _set_timedate Asia/Seoul ;;
+                5) _set_timedate Asia/Singapore ;;
+                11) _set_timedate Europe/London ;;
+                12) _set_timedate Europe/Paris ;;
+                13) _set_timedate Europe/Berlin ;;
+                21) _set_timedate America/Los_Angeles ;;
+                22) _set_timedate America/New_York ;;
+                23) _set_timedate America/Vancouver ;;
+                31) _set_timedate UTC ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. ROOT密码登录模式"; echo "2. 修改登录密码"; echo "3. 开放所有端口"; echo "4. 修改SSH连接端口"; echo "5. 优化DNS地址"; echo "6. 查看端口占用状态"; echo "7. 修改虚拟内存大小"; echo "8. 系统时区调整 (设置为上海)"; echo "9. 定时任务管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. ROOT密码登录模式"; echo "2. 修改登录密码"; echo "3. 开放所有端口"; echo "4. 修改SSH连接端口"; echo "5. 优化DNS地址"; echo "6. 查看端口占用状态"; echo "7. 修改虚拟内存大小"; echo "8. 系统时区调整"; echo "9. 定时任务管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -236,8 +260,8 @@ function system_tools() {
             4) clear; change_ssh_port; press_any_key_to_continue ;;
             5) set_dns_ui ;;
             6) clear; install ss; ss -tulnpe; press_any_key_to_continue ;;
-            7) add_swap; press_any_key_to_continue ;;
-            8) clear; set_timezone; press_any_key_to_continue ;;
+            7) add_swap_menu; press_any_key_to_continue ;;
+            8) timezone_menu ;;
             9) install cron || install cronie; clear; crontab -e ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
@@ -260,6 +284,7 @@ function app_management() {
         esac
     done
 }
+
 
 # 6. Docker管理
 function docker_management() {
