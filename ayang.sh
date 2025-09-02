@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.13 (修复菜单颜色显示问题)
+# AYANG's Toolbox v1.3.16 (卸载后自动刷新应用菜单)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.13"
+readonly SCRIPT_VERSION="1.3.16"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -400,6 +400,7 @@ function app_management() {
                 echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
                 echo -e "默认用户名: ${gl_lv}memos${gl_bai}"
                 echo -e "默认密码: ${gl_lv}默认无密码，首次登录需自行设置${gl_bai}"
+                echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
             else
                 echo -e "${gl_hong}Memos 容器启动失败，请检查 Docker 日志。${gl_bai}"
@@ -413,6 +414,12 @@ function app_management() {
             read -p "请输入远程服务器SSH端口 (REMOTE_PORT): " remote_port
             read -p "请输入远程服务器用户名 (REMOTE_USER): " remote_user
             read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
+            read -p "请输入本地 Memos 数据目录 (LOCAL_DIR, 默认: /wliuy/memos): " local_dir
+            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos): " remote_dir
+            
+            local_dir=${local_dir:-"/wliuy/memos"}
+            remote_dir=${remote_dir:-"/wliuy/memos"}
+            
             echo ""
 
             if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$remote_pass" ]; then
@@ -456,7 +463,7 @@ function app_management() {
 ssh -p ${remote_port} ${remote_user}@${remote_host} "docker stop memos"
 
 # 同步本地目录到远程
-rsync -avz --checksum -e "ssh -p ${remote_port}" --delete "$MEMOS_DATA_DIR" ${remote_user}@${remote_host}:"/wliuy/memos/"
+rsync -avz --checksum -e "ssh -p ${remote_port}" --delete "${local_dir}" ${remote_user}@${remote_host}:"${remote_dir}"
 
 # 启动远程 memos 容器
 ssh -p ${remote_port} ${remote_user}@${remote_host} "docker start memos"
@@ -475,7 +482,7 @@ EOF
             echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
             echo -e "----------------------------------------"
             if [ -f "${LOG_FILE}" ]; then
-                tail -n 50 "${LOG_FILE}" # 默认显示最后50行，更具可读性
+                tail -n 50 "${LOG_FILE}"
             else
                 echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
             fi
@@ -590,9 +597,9 @@ EOF
             1) install_lucky; press_any_key_to_continue ;;
             2) install_filebrowser; press_any_key_to_continue ;;
             3) memos_management ;;
-            -1) uninstall_lucky; press_any_key_to_continue ;;
-            -2) uninstall_filebrowser; press_any_key_to_continue ;;
-            -3) uninstall_memos; press_any_key_to_continue ;;
+            -1) uninstall_lucky; app_management ;;
+            -2) uninstall_filebrowser; app_management ;;
+            -3) uninstall_memos; app_management ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
@@ -709,7 +716,7 @@ EOF
     while true; do
       clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
       echo -e "${gl_kjlan}1.    ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}2.    ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}3.    ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}4.    ${gl_bai}Docker镜像管理"; echo -e "${gl_kjlan}5.    ${gl_bai}Docker网络管理"; echo -e "${gl_kjlan}6.    ${gl_bai}Docker卷管理"; echo -e "${gl_kjlan}7.    ${gl_bai}清理无用的Docker数据"; echo -e "${gl_kjlan}8.    ${gl_bai}更换Docker源"; echo -e "${gl_kjlan}20.   ${gl_bai}卸载Docker环境"
-      echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_kjlan}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}------------------------${gl_bai}"
+      echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_kjlan}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
       read -p "请输入你的选择: " sub_choice
       case $sub_choice in
         1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -855,14 +862,14 @@ function main_menu() {
   echo -e "${gl_kjlan}2.  ${gl_bai}系统更新"
   echo -e "${gl_kjlan}3.  ${gl_bai}系统清理"
   echo -e "${gl_kjlan}4.  ${gl_bai}系统工具"
-  echo -e "${gl_kjlan}5.  ${gl_bai}应用管理"
-  echo -e "${gl_kjlan}6.  ${gl_bai}Docker管理"
-  echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-  echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
-  echo -e "${gl_kjlan}000.${gl_bai}卸载脚本"
-  echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
-  echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-  read -p "请输入你的选择: " choice
+	echo -e "${gl_kjlan}5.  ${gl_bai}应用管理"
+	echo -e "${gl_kjlan}6.  ${gl_bai}Docker管理"
+	echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+	echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
+	echo -e "${gl_kjlan}000.${gl_bai}卸载脚本"
+	echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
+	echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+	read -p "请输入你的选择: " choice
 }
 
 # --- 主循环 ---
