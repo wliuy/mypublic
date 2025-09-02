@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.17 (修复Memos默认登录信息)
+# AYANG's Toolbox v1.3.18 (Memos备份功能增强)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.17"
+readonly SCRIPT_VERSION="1.3.18"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -371,7 +371,7 @@ function app_management() {
     
     function memos_management() {
         local MEMOS_DATA_DIR="/wliuy/memos"
-        local SYNC_SCRIPT="/wliuy/memos/sync_memos.sh"
+        local SYNC_SCRIPT_BASE="${MEMOS_DATA_DIR}/sync_memos"
         local LOG_FILE="/var/log/sync_memos.log"
 
         function install_memos() {
@@ -382,6 +382,9 @@ function app_management() {
                 echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
                 local public_ip=$(curl -s https://ipinfo.io/ip)
                 echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
+                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
+                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
+                echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 return
             fi
 
@@ -398,7 +401,8 @@ function app_management() {
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
                 echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
-                echo -e "默认登录信息: ${gl_lv}无默认登录信息，首次访问页面时自行设置。${gl_bai}"
+                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
+                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
             else
@@ -455,8 +459,12 @@ function app_management() {
             fi
 
             # 创建同步脚本
-            echo -e "📝 创建同步脚本 ${SYNC_SCRIPT}..."
-            cat > "${SYNC_SCRIPT}" <<EOF
+            local sync_script_name="sync_memos_${remote_host}.sh"
+            local sync_script_path="${SYNC_SCRIPT_BASE}/${sync_script_name}"
+            
+            echo -e "📝 创建同步脚本 ${sync_script_path}..."
+            mkdir -p "${SYNC_SCRIPT_BASE}"
+            cat > "${sync_script_path}" <<EOF
 #!/bin/bash
 # 停止远程 memos 容器
 ssh -p ${remote_port} ${remote_user}@${remote_host} "docker stop memos"
@@ -467,15 +475,48 @@ rsync -avz --checksum -e "ssh -p ${remote_port}" --delete "${local_dir}" ${remot
 # 启动远程 memos 容器
 ssh -p ${remote_port} ${remote_user}@${remote_host} "docker start memos"
 EOF
-            chmod +x "${SYNC_SCRIPT}"
+            chmod +x "${sync_script_path}"
 
             # 添加定时任务
+            local cron_job="0 0 * * * ${sync_script_path} >> ${LOG_FILE} 2>&1"
             echo -e "📅 添加定时任务（每天 0 点执行）..."
-            ( crontab -l 2>/dev/null | grep -v "${SYNC_SCRIPT}" ; echo "0 0 * * * ${SYNC_SCRIPT} >> ${LOG_FILE} 2>&1" ) | crontab -
+            ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ; echo "$cron_job" ) | crontab -
 
-            echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据。"
+            echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据到 ${remote_host}。"
         }
         
+        function delete_memos_sync() {
+            clear; echo -e "${gl_kjlan}删除 Memos 备份配置...${gl_bai}"
+            echo -e "----------------------------------------"
+            local configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" | sed 's/sync_memos_//g;s/.sh//g')
+
+            if [ -z "$configured_servers" ]; then
+                echo -e "${gl_huang}未找到任何已配置的远程备份服务器。${gl_bai}"
+                return
+            fi
+
+            echo -e "${gl_kjlan}已配置的远程服务器:${gl_bai}"
+            echo "${configured_servers}"
+            echo -e "----------------------------------------"
+
+            read -p "请输入要删除备份配置的服务器地址: " server_to_delete
+
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${server_to_delete}.sh"
+            if [ -f "$sync_script_path" ]; then
+                echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
+                read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
+                if [[ "${confirm,,}" == "y" ]]; then
+                    rm -f "${sync_script_path}"
+                    ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
+                    echo -e "${gl_lv}✅ 备份配置已成功删除。${gl_bai}"
+                else
+                    echo -e "${gl_huang}操作已取消。${gl_bai}"
+                fi
+            else
+                echo -e "${gl_hong}错误：未找到服务器 ${server_to_delete} 的备份配置。${gl_bai}"
+            fi
+        }
+
         function view_memos_sync_log() {
             clear
             echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
@@ -489,11 +530,45 @@ EOF
         }
 
         while true; do
-            clear; echo "Memos 管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. 安装 Memos"; echo "2. 自动备份到远程服务器"; echo "3. 查看备份日志"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回上一级菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            clear
+            echo "Memos 管理"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo "1. 安装 Memos"
+            echo "2. 配置自动备份"
+            echo "3. 查看备份日志"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo "0. 返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " memos_choice
             case $memos_choice in
                 1) install_memos; press_any_key_to_continue ;;
-                2) setup_memos_sync; press_any_key_to_continue ;;
+                2)
+                    while true; do
+                        clear
+                        echo "Memos 自动备份管理"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "已配置的远程服务器:"
+                        local configured_servers=$(ls ${SYNC_SCRIPT_BASE} | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+                        if [ -z "$configured_servers" ]; then
+                            echo -e "  ${gl_hui}无${gl_bai}"
+                        else
+                            echo -e "${gl_lv}  $configured_servers${gl_bai}"
+                        fi
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "1. 添加备份配置"
+                        echo "2. 删除备份配置"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "0. 返回上一级菜单"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        read -p "请输入你的选择: " sync_choice
+                        case $sync_choice in
+                            1) setup_memos_sync; press_any_key_to_continue ;;
+                            2) delete_memos_sync; press_any_key_to_continue ;;
+                            0) break ;;
+                            *) echo "无效输入"; sleep 1 ;;
+                        esac
+                    done
+                    ;;
                 3) view_memos_sync_log; press_any_key_to_continue ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
@@ -538,7 +613,7 @@ EOF
     
     function uninstall_memos() {
         local MEMOS_DATA_DIR="/wliuy/memos"
-        local SYNC_SCRIPT="/wliuy/memos/sync_memos.sh"
+        local SYNC_SCRIPT_BASE="${MEMOS_DATA_DIR}/sync_memos"
         local LOG_FILE="/var/log/sync_memos.log"
         
         clear; echo -e "${gl_kjlan}正在卸载 Memos...${gl_bai}"
@@ -562,9 +637,11 @@ EOF
         rm -rf ${MEMOS_DATA_DIR}
         
         echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
-        if [ -f "${SYNC_SCRIPT}" ]; then
-            rm -f "${SYNC_SCRIPT}"
-            ( crontab -l 2>/dev/null | grep -v "${SYNC_SCRIPT}" ) | crontab -
+        if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+            for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
+                ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
+                rm -f "$script"
+            done
         fi
         
         echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
@@ -580,14 +657,14 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装:"
-        echo -e "  ${lucky_color}1. Lucky 反代${gl_bai}"
-        echo -e "  ${fb_color}2. FileBrowser (文件管理)${gl_bai}"
-        echo -e "  ${memos_color}3. Memos (轻量笔记)${gl_bai}"
+        echo -e "  ${lucky_color}1. Lucky 反代"
+        echo -e "  ${fb_color}2. FileBrowser (文件管理)"
+        echo -e "  ${memos_color}3. Memos (轻量笔记)"
         echo
         echo "卸载:"
-        echo -e "  ${lucky_color}-1. 卸载 Lucky 反代${gl_bai}"
-        echo -e "  ${fb_color}-2. 卸载 FileBrowser${gl_bai}"
-        echo -e "  ${memos_color}-3. 卸载 Memos${gl_bai}"
+        echo -e "  ${lucky_color}-1. 卸载 Lucky 反代"
+        echo -e "  ${fb_color}-2. 卸载 FileBrowser"
+        echo -e "  ${memos_color}-3. 卸载 Memos"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0. 返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
