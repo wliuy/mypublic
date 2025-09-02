@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0 (基于 kejilion.sh 风格定制)
+# AYANG's Toolbox v3.0 (功能升级 & 智能安装)
 #
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -18,12 +18,9 @@ gl_kjlan='\033[96m'
 # --- 辅助函数 (源于 kejilion.sh) ---
 
 # 操作完成后的暂停提示
-function break_end() {
-	  echo -e "${gl_lv}操作完成${gl_bai}"
-	  echo "按任意键继续..."
+function press_any_key_to_continue() {
+	  echo -e "\n${gl_huang}按任意键返回主菜单...${gl_bai}"
 	  read -n 1 -s -r -p ""
-	  echo ""
-	  clear
 }
 
 # 通用安装函数 (源于 kejilion.sh)
@@ -60,14 +57,10 @@ install() {
 # 1. 系统信息查询 (代码源于 kejilion.sh 的 linux_ps 函数)
 function system_info() {
 	clear
-	
-	# 获取IP地址
 	ipv4_address=$(curl -s https://ipinfo.io/ip)
 	ipv6_address=$(curl -s --max-time 1 https://v6.ipinfo.io/ip)
-
 	local cpu_info=$(lscpu | awk -F': +' '/Model name:/ {print $2; exit}')
-	local cpu_usage_percent=$(awk '{u=$2+$4; t=$2+$4+$5; if (NR==1){u1=u; t1=t;} else printf "%.0f\n", (($2+$4-u1) * 100 / (t-t1))}' \
-		<(grep 'cpu ' /proc/stat) <(sleep 1; grep 'cpu ' /proc/stat))
+	local cpu_usage_percent=$(awk '{u=$2+$4; t=$2+$4+$5; if (NR==1){u1=u; t1=t;} else printf "%.0f\n", (($2+$4-u1) * 100 / (t-t1))}' <(grep 'cpu ' /proc/stat) <(sleep 1; grep 'cpu ' /proc/stat))
 	local cpu_cores=$(nproc)
 	local mem_info=$(free -b | awk 'NR==2{printf "%.2f/%.2fG (%.2f%%)", $3/1024/1024/1024, $2/1024/1024/1024, $3*100/$2}')
 	local disk_info=$(df -h | awk '$NF=="/"{printf "%s/%s (%s)", $3, $2, $5}')
@@ -97,12 +90,8 @@ function system_info() {
 	echo -e "${gl_kjlan}物理内存:     ${gl_bai}$mem_info"
 	echo -e "${gl_kjlan}硬盘占用:     ${gl_bai}$disk_info"
 	echo -e "${gl_kjlan}-------------"
-	if [ -n "$ipv4_address" ]; then
-		echo -e "${gl_kjlan}IPv4地址:     ${gl_bai}$ipv4_address"
-	fi
-	if [ -n "$ipv6_address" ]; then
-		echo -e "${gl_kjlan}IPv6地址:     ${gl_bai}$ipv6_address"
-	fi
+	if [ -n "$ipv4_address" ]; then echo -e "${gl_kjlan}IPv4地址:     ${gl_bai}$ipv4_address"; fi
+	if [ -n "$ipv6_address" ]; then echo -e "${gl_kjlan}IPv6地址:     ${gl_bai}$ipv6_address"; fi
 	echo -e "${gl_kjlan}运营商:       ${gl_bai}$isp_info"
 	echo -e "${gl_kjlan}地理位置:     ${gl_bai}$country $city"
 	echo -e "${gl_kjlan}-------------"
@@ -110,84 +99,47 @@ function system_info() {
 	echo
 }
 
-# 2. 系统更新 (代码源于 kejilion.sh 的 linux_update 函数)
+# 2. 系统更新 (代码源于 kejilion.sh)
 function system_update() {
 	echo -e "${gl_huang}正在系统更新...${gl_bai}"
-	if command -v dnf &>/dev/null; then
-		dnf -y update
-	elif command -v yum &>/dev/null; then
-		yum -y update
-	elif command -v apt &>/dev/null; then
-		apt update -y && apt full-upgrade -y
-	elif command -v apk &>/dev/null; then
-		apk update && apk upgrade
-	elif command -v pacman &>/dev/null; then
-		pacman -Syu --noconfirm
-	else
-		echo "未知的包管理器!"
-		return
-	fi
+	if command -v dnf &>/dev/null; then dnf -y update
+	elif command -v yum &>/dev/null; then yum -y update
+	elif command -v apt &>/dev/null; then apt update -y && apt full-upgrade -y
+	elif command -v apk &>/dev/null; then apk update && apk upgrade
+	elif command -v pacman &>/dev/null; then pacman -Syu --noconfirm
+	else echo "未知的包管理器!"; return; fi
 }
 
-# 3. 系统清理 (代码源于 kejilion.sh 的 linux_clean 函数)
+# 3. 系统清理 (代码源于 kejilion.sh)
 function system_clean() {
 	echo -e "${gl_huang}正在系统清理...${gl_bai}"
-	if command -v dnf &>/dev/null; then
-		dnf autoremove -y && dnf clean all && journalctl --rotate && journalctl --vacuum-time=1s
-	elif command -v yum &>/dev/null; then
-		yum autoremove -y && yum clean all && journalctl --rotate && journalctl --vacuum-time=1s
-	elif command -v apt &>/dev/null; then
-		apt autoremove --purge -y && apt clean -y && apt autoclean -y && journalctl --rotate && journalctl --vacuum-time=1s
-	elif command -v apk &>/dev/null; then
-		rm -rf /var/cache/apk/*
-	elif command -v pacman &>/dev/null; then
-		pacman -Rns $(pacman -Qdtq) --noconfirm && pacman -Scc --noconfirm && journalctl --rotate && journalctl --vacuum-time=1s
-	else
-		echo "未知的包管理器!"
-		return
-	fi
-	return
+	if command -v dnf &>/dev/null; then dnf autoremove -y && dnf clean all && journalctl --rotate && journalctl --vacuum-time=1s
+	elif command -v yum &>/dev/null; then yum autoremove -y && yum clean all && journalctl --rotate && journalctl --vacuum-time=1s
+	elif command -v apt &>/dev/null; then apt autoremove --purge -y && apt clean -y && apt autoclean -y && journalctl --rotate && journalctl --vacuum-time=1s
+	elif command -v apk &>/dev/null; then rm -rf /var/cache/apk/*
+	elif command -v pacman &>/dev/null; then pacman -Rns $(pacman -Qdtq) --noconfirm && pacman -Scc --noconfirm && journalctl --rotate && journalctl --vacuum-time=1s
+	else echo "未知的包管理器!"; return; fi
 }
 
 # 6. Docker管理
-
-# Docker 安装函数 (源于 kejilion.sh 的 install_add_docker 函数)
 function docker_install_helper() {
 	echo -e "${gl_huang}正在安装docker环境...${gl_bai}"
-    if ! command -v docker &>/dev/null; then
-        curl -fsSL https://get.docker.com | sh
-    fi
-    # 设置国内镜像源
+    if ! command -v docker &>/dev/null; then curl -fsSL https://get.docker.com | sh; fi
     local country=$(curl -s ipinfo.io/country)
     if [ "$country" = "CN" ]; then
         mkdir -p /etc/docker
         cat > /etc/docker/daemon.json << EOF
-{
-  "registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1panel.live", "https://docker.aliyuncs.com"]
-}
+{ "registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1panel.live", "https://docker.aliyuncs.com"] }
 EOF
     fi
-    systemctl enable docker
-    systemctl restart docker
+    systemctl enable docker && systemctl restart docker
     install docker-compose
     echo -e "${gl_lv}Docker 环境安装/更新完成！${gl_bai}"
 }
-
-# Docker 容器管理 (源于 kejilion.sh 的 docker_ps 函数)
 function docker_container_menu() {
     while true; do
-        clear
-        echo "Docker容器列表"
-        docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
-        echo ""
-        echo "容器操作"
-        echo "------------------------"
-        echo "1. 启动指定容器             2. 停止指定容器"
-        echo "3. 删除指定容器             4. 重启指定容器"
-        echo "5. 查看容器日志             6. 进入容器终端"
-        echo "------------------------"
-        echo "0. 返回Docker主菜单"
-        echo "------------------------"
+        clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""; echo "容器操作"; echo "------------------------"
+        echo "1. 启动指定容器             2. 停止指定容器"; echo "3. 删除指定容器             4. 重启指定容器"; echo "5. 查看容器日志             6. 进入容器终端"; echo "------------------------"; echo "0. 返回Docker主菜单"; echo "------------------------"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) read -p "请输入要启动的容器名或ID: " name; docker start $name ;;
@@ -199,25 +151,13 @@ function docker_container_menu() {
             0) break ;;
             *) echo "无效输入" ;;
         esac
-        echo -e "\n操作完成，按任意键继续..."
-        read -n 1 -s -r
+        echo -e "\n操作完成，按任意键继续..."; read -n 1 -s -r
     done
 }
-
-# Docker 镜像管理 (源于 kejilion.sh 的 docker_image 函数)
 function docker_image_menu() {
     while true; do
-        clear
-        echo "Docker镜像列表"
-        docker image ls
-        echo ""
-        echo "镜像操作"
-        echo "------------------------"
-        echo "1. 拉取指定镜像             2. 删除指定镜像"
-        echo "3. 清理无用镜像"
-        echo "------------------------"
-        echo "0. 返回Docker主菜单"
-        echo "------------------------"
+        clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo "------------------------"
+        echo "1. 拉取指定镜像             2. 删除指定镜像"; echo "3. 清理无用镜像"; echo "------------------------"; echo "0. 返回Docker主菜单"; echo "------------------------"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) read -p "请输入要拉取的镜像名 (例如: ubuntu:latest): " name; docker pull $name ;;
@@ -226,44 +166,55 @@ function docker_image_menu() {
             0) break ;;
             *) echo "无效输入" ;;
         esac
-        echo -e "\n操作完成，按任意键继续..."
-        read -n 1 -s -r
+        echo -e "\n操作完成，按任意键继续..."; read -n 1 -s -r
     done
 }
-
-
-# Docker 管理主菜单
 function docker_management() {
     while true; do
-        clear
-        echo "Docker 管理"
-        if command -v docker &> /dev/null; then
-            docker -v
-            docker compose version
-        else
-            echo -e "${gl_hui}Docker 未安装${gl_bai}"
-        fi
-        echo -e "${gl_kjlan}------------------------"
-        echo "1. 安装/更新 Docker 环境"
-        echo "2. 管理 Docker 容器"
-        echo "3. 管理 Docker 镜像"
-        echo "4. 查看 Docker 全局状态"
-        echo "5. 清理无用的Docker数据"
-        echo -e "${gl_kjlan}------------------------"
-        echo "0. 返回主菜单"
-        echo -e "${gl_kjlan}------------------------${gl_bai}"
+        clear; echo "Docker 管理"; if command -v docker &> /dev/null; then docker -v; docker compose version; else echo -e "${gl_hui}Docker 未安装${gl_bai}"; fi
+        echo -e "${gl_kjlan}------------------------"; echo "1. 安装/更新 Docker 环境"; echo "2. 管理 Docker 容器"; echo "3. 管理 Docker 镜像"; echo "4. 查看 Docker 全局状态"; echo "5. 清理无用的Docker数据"; echo -e "${gl_kjlan}------------------------"; echo "0. 返回主菜单"; echo -e "${gl_kjlan}------------------------${gl_bai}"
         read -p "请输入你的选择: " choice
-
         case $choice in
             1) clear; docker_install_helper; break_end ;;
             2) docker_container_menu ;;
             3) docker_image_menu ;;
-            4) clear; docker system df; break_end ;;
-            5) clear; docker system prune -af --volumes; break_end ;;
+            4) clear; docker system df; press_any_key_to_continue ;;
+            5) clear; docker system prune -af --volumes; press_any_key_to_continue ;;
             0) break ;;
             *) echo "无效输入" ;;
         esac
     done
+}
+
+# (核心功能) 安装快捷指令
+function install_shortcut() {
+  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
+  local install_name="tools"
+  local shortcut_name="y"
+  local install_path="/usr/local/bin/${install_name}"
+  local shortcut_path="/usr/local/bin/${shortcut_name}"
+
+  echo -e "${gl_kjlan}开始安装快捷方式 '${shortcut_name}'...${gl_bai}"
+
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo -e "${gl_hong}错误：安装过程需要 root 权限。${gl_bai}";
+    echo -e "${gl_huang}请尝试使用 'sudo bash <(curl...)' 来运行此脚本。${gl_bai}"
+    return 1
+  fi
+
+  echo -e "${gl_lan}正在从 GitHub 下载最新版脚本到 ${install_path}...${gl_bai}"
+  if curl -L "${script_url}" -o "${install_path}"; then
+    echo -e "${gl_lv}下载成功！${gl_bai}"
+  else
+    echo -e "${gl_hong}错误：下载脚本失败。${gl_bai}"; return 1;
+  fi
+
+  echo -e "${gl_lan}正在设置执行权限...${gl_bai}"; chmod +x "${install_path}"
+  echo -e "${gl_lan}正在创建快捷命令 '${shortcut_name}'...${gl_bai}"; ln -sf "${install_path}" "${shortcut_path}"
+  
+  echo -e "\n${gl_lv}🎉 恭喜！快捷方式安装成功！${gl_bai}"
+  echo -e "下次登录后, 你就可以在任何地方直接输入 '${gl_huang}${shortcut_name}${gl_bai}' 来运行此工具箱了。"
+  return 0
 }
 
 
@@ -278,7 +229,7 @@ function main_menu() {
   echo -e "   ██║  ██║   ██║   ██║  ██║██║ ╚████║╚██████╔╝"
   echo -e "   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
   echo -e "${gl_bai}"
-  echo -e "${gl_lan}               AYANG's Toolbox v2.0               ${gl_bai}"
+  echo -e "${gl_lan}               AYANG's Toolbox v1.0.3               ${gl_bai}"
   echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
   echo -e "${gl_kjlan}1.  ${gl_bai}系统信息查询"
   echo -e "${gl_kjlan}2.  ${gl_bai}系统更新"
@@ -291,14 +242,41 @@ function main_menu() {
 }
 
 # --- 主循环 ---
-while true; do
-  main_menu
-  case $choice in
-    1) system_info; break_end ;;
-    2) clear; system_update; break_end ;;
-    3) clear; system_clean; break_end ;;
-    6) docker_management ;;
-    0) clear; exit ;;
-    *) echo -e "${gl_hong}无效的输入!${gl_bai}"; sleep 1 ;;
-  esac
-done
+function main_loop() {
+    while true; do
+      main_menu
+      case $choice in
+        1) system_info; press_any_key_to_continue ;;
+        2) clear; system_update; press_any_key_to_continue ;;
+        3) clear; system_clean; press_any_key_to_continue ;;
+        6) docker_management ;;
+        0) clear; exit ;;
+        *) echo -e "${gl_hong}无效的输入!${gl_bai}"; sleep 1 ;;
+      esac
+    done
+}
+
+
+# ===================================================================================
+# --- 脚本主入口逻辑 (v1.0 核心功能回归) ---
+# ===================================================================================
+
+readonly INSTALL_PATH="/usr/local/bin/tools"
+
+# 判断脚本是否已安装
+if [ ! -f "${INSTALL_PATH}" ]; then
+  # 首次运行，执行自动安装
+  clear
+  echo -e "${gl_kjlan}欢迎使用 AYANG's Toolbox, 检测到是首次运行。${gl_bai}"
+  echo -e "${gl_huang}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${gl_bai}"
+  echo -e "---------------------------------------------------------------------"
+  
+  install_shortcut
+  
+  echo -e "\n${gl_lv}安装流程执行完毕！${gl_bai}"
+  echo -e "${gl_huang}正在继续进入主菜单...${gl_bai}"
+  sleep 3
+fi
+
+# 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
+main_loop
