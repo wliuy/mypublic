@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.10 (新增Memos管理功能)
+# AYANG's Toolbox v1.3.12 (优化应用管理菜单)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.10"
+readonly SCRIPT_VERSION="1.3.12"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -274,6 +274,10 @@ function system_tools() {
 
 # 5. 应用管理
 function app_management() {
+    local lucky_color=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
+    local fb_color=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
+    local memos_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
+
     function install_lucky() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
         if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
@@ -364,8 +368,7 @@ function app_management() {
             echo -e "${gl_hong}FileBrowser 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
     }
-
-    # 新增 Memos 相关函数
+    
     function memos_management() {
         local MEMOS_DATA_DIR="/wliuy/memos"
         local SYNC_SCRIPT="/wliuy/memos/sync_memos.sh"
@@ -412,6 +415,11 @@ function app_management() {
             read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
             echo ""
 
+            if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$remote_pass" ]; then
+                echo -e "${gl_hong}输入信息不完整，备份配置已取消。${gl_bai}"
+                return
+            fi
+            
             # 检查并安装 sshpass
             if ! command -v sshpass &> /dev/null; then
                 echo -e "📦 安装 sshpass..."
@@ -463,12 +471,15 @@ EOF
         }
         
         function view_memos_sync_log() {
-            clear; echo -e "${gl_kjlan}正在查看 Memos 备份日志... (按 Ctrl+C 退出)${gl_bai}"
+            clear
+            echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
+            echo -e "----------------------------------------"
             if [ -f "${LOG_FILE}" ]; then
-                tail -f "${LOG_FILE}"
+                tail -n 50 "${LOG_FILE}" # 默认显示最后50行，更具可读性
             else
                 echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
             fi
+            echo -e "----------------------------------------"
         }
 
         while true; do
@@ -529,7 +540,7 @@ EOF
             echo -e "${gl_huang}未找到 Memos 容器，无需卸载。${gl_bai}"; return;
         fi
 
-        echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有数据！${gl_bai}"
+        echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
         echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
         read -p "如确认继续，请输入 'y' : " confirm
@@ -559,15 +570,15 @@ EOF
     }
 
     while true; do
-        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  1. Lucky 反代"; echo "  2. FileBrowser (文件管理)"; echo "  3. Memos (轻量笔记)"; echo -e "  ${gl_hui}...更多应用待添加...${gl_bai}"; echo; echo "卸载:"; echo "  11. 卸载 Lucky 反代"; echo "  12. 卸载 FileBrowser"; echo "  13. 卸载 Memos"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  ${lucky_color}1. Lucky 反代${gl_bai}"; echo "  ${fb_color}2. FileBrowser (文件管理)${gl_bai}"; echo "  ${memos_color}3. Memos (轻量笔记)${gl_bai}"; echo; echo "卸载:"; echo "  ${lucky_color}-1. 卸载 Lucky 反代${gl_bai}"; echo "  ${fb_color}-2. 卸载 FileBrowser${gl_bai}"; echo "  ${memos_color}-3. 卸载 Memos${gl_bai}"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
             1) install_lucky; press_any_key_to_continue ;;
             2) install_filebrowser; press_any_key_to_continue ;;
             3) memos_management ;;
-            11) uninstall_lucky; press_any_key_to_continue ;;
-            12) uninstall_filebrowser; press_any_key_to_continue ;;
-            13) uninstall_memos; press_any_key_to_continue ;;
+            -1) uninstall_lucky; press_any_key_to_continue ;;
+            -2) uninstall_filebrowser; press_any_key_to_continue ;;
+            -3) uninstall_memos; press_any_key_to_continue ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
