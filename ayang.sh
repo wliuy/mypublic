@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.22 (修复应用菜单刷新问题)
+# AYANG's Toolbox v1.3.23 (修复Memos备份执行错误)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.22"
+readonly SCRIPT_VERSION="1.3.23"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -544,7 +544,11 @@ EOF
             if [ -f "$sync_script_path" ]; then
                 echo -e "${gl_lan}正在执行备份脚本...${gl_bai}"
                 bash "$sync_script_path"
-                echo -e "\n${gl_lv}✅ 备份任务执行完毕。${gl_bai}"
+                if [ $? -eq 0 ]; then
+                    echo -e "\n${gl_lv}✅ 备份任务执行完毕。${gl_bai}"
+                else
+                    echo -e "\n${gl_hong}❌ 备份任务执行失败。请检查日志。${gl_bai}"
+                fi
             else
                 echo -e "${gl_hong}错误：未找到服务器 ${server_to_sync} 的备份脚本。${gl_bai}"
             fi
