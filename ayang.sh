@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.12 (优化应用管理菜单)
+# AYANG's Toolbox v1.3.13 (修复菜单颜色显示问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.12"
+readonly SCRIPT_VERSION="1.3.13"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -570,7 +570,21 @@ EOF
     }
 
     while true; do
-        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  ${lucky_color}1. Lucky 反代${gl_bai}"; echo "  ${fb_color}2. FileBrowser (文件管理)${gl_bai}"; echo "  ${memos_color}3. Memos (轻量笔记)${gl_bai}"; echo; echo "卸载:"; echo "  ${lucky_color}-1. 卸载 Lucky 反代${gl_bai}"; echo "  ${fb_color}-2. 卸载 FileBrowser${gl_bai}"; echo "  ${memos_color}-3. 卸载 Memos${gl_bai}"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear
+        echo -e "应用管理"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo "安装:"
+        echo -e "  ${lucky_color}1. Lucky 反代${gl_bai}"
+        echo -e "  ${fb_color}2. FileBrowser (文件管理)${gl_bai}"
+        echo -e "  ${memos_color}3. Memos (轻量笔记)${gl_bai}"
+        echo
+        echo "卸载:"
+        echo -e "  ${lucky_color}-1. 卸载 Lucky 反代${gl_bai}"
+        echo -e "  ${fb_color}-2. 卸载 FileBrowser${gl_bai}"
+        echo -e "  ${memos_color}-3. 卸载 Memos${gl_bai}"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo -e "0. 返回主菜单"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
             1) install_lucky; press_any_key_to_continue ;;
