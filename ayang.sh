@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.7 (修复FileBrowser默认密码获取)
+# AYANG's Toolbox v1.3.8 (修复FileBrowser默认密码获取)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.7"
+readonly SCRIPT_VERSION="1.3.8"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -333,13 +333,13 @@ function app_management() {
         echo -e "${gl_lan}等待容器启动并生成日志...${gl_bai}"
         local timeout=20
         local start_time=$(date +%s)
-        local log_output=""
         local password=""
         # 循环检查日志，直到找到密码或超时
         while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
-            log_output=$(docker logs filebrowser 2>&1 | grep "User 'admin' initialized")
-            if [ -n "$log_output" ]; then
-                password=$(echo "$log_output" | awk '{print $NF}' | tr -d '\r')
+            # 搜索包含 "password" 的那一行，然后精确提取最后一个词作为密码
+            local log_line=$(docker logs filebrowser 2>&1 | grep "password: " | tail -n 1)
+            if [ -n "$log_line" ]; then
+                password=$(echo "$log_line" | awk '{print $NF}' | tr -d '\r')
                 break
             fi
             sleep 1
