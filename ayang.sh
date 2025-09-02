@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.8 (修复FileBrowser默认密码获取)
+# AYANG's Toolbox v1.3.9 (隐藏FileBrowser日志输出)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.8"
+readonly SCRIPT_VERSION="1.3.9"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -334,9 +334,7 @@ function app_management() {
         local timeout=20
         local start_time=$(date +%s)
         local password=""
-        # 循环检查日志，直到找到密码或超时
         while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
-            # 搜索包含 "password" 的那一行，然后精确提取最后一个词作为密码
             local log_line=$(docker logs filebrowser 2>&1 | grep "password: " | tail -n 1)
             if [ -n "$log_line" ]; then
                 password=$(echo "$log_line" | awk '{print $NF}' | tr -d '\r')
@@ -362,8 +360,6 @@ function app_management() {
                 echo -e "你可以运行 ${gl_lv}docker logs filebrowser${gl_bai} 手动查看。"
             fi
             echo -e "-----------------------------------"
-            echo -e "\n${gl_hui}容器最新日志（最后几行）: ${gl_bai}"
-            docker logs --tail 10 filebrowser 2>&1
         else
             echo -e "${gl_hong}FileBrowser 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
@@ -484,7 +480,7 @@ EOF
     }
     function docker_image() {
         while true; do
-            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像            3. 删除指定镜像"; echo "2. 更新指定镜像            4. 删除所有镜像"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像            3. 删除指定镜像"; echo "2. 更新指定镜像            4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
@@ -499,7 +495,7 @@ EOF
     function docker_network() {
         while true; do
             clear; echo "Docker网络列表"; echo -e "${gl_hong}------------------------------------------------------------${gl_bai}"; docker network ls; echo ""
-            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新网络名: " network; docker network create $network ;;
@@ -513,7 +509,7 @@ EOF
     }
     function docker_volume() {
         while true; do
-            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
@@ -698,7 +694,7 @@ function main_loop() {
         00) update_script ;;
         000) uninstall_script ;;
         0) clear; exit 0 ;;
-        *) echo -e "${gl_hong}无效的输入!${gl_bai}"; sleep 1 ;;
+        *) echo "无效输入"; sleep 1 ;;
       esac
     done
 }
@@ -710,7 +706,6 @@ function main_loop() {
 
 readonly INSTALL_PATH="/usr/local/bin/y"
 
-# 判断脚本是否已安装
 if [ ! -f "${INSTALL_PATH}" ]; then
   clear
   echo -e "${gl_kjlan}欢迎使用 AYANG's Toolbox, 检测到是首次运行。${gl_bai}"
@@ -729,5 +724,4 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   echo -e "\n${gl_lv}安装流程执行完毕！正在进入主菜单...${gl_bai}"
 fi
 
-# 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
 main_loop
