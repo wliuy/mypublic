@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.16 (卸载后自动刷新应用菜单)
+# AYANG's Toolbox v1.3.16 (修复Memos默认登录信息)
 #
 
 # --- 全局配置 ---
@@ -398,8 +398,8 @@ function app_management() {
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
                 echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
-                echo -e "默认用户名: ${gl_lv}memos${gl_bai}"
-                echo -e "默认密码: ${gl_lv}默认无密码，首次登录需自行设置${gl_bai}"
+                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
+                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
             else
