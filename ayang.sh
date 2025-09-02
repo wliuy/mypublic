@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.2.9 (功能完整最终修复版)
+# AYANG's Toolbox v1.3.1 (功能完整最终修复版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.0"
+readonly SCRIPT_VERSION="1.3.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -278,7 +278,14 @@ function app_management() {
     function install_lucky() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
         if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
-        if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then local public_ip=$(curl -s https://ipinfo.io/ip); echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"; echo -e "你可以通过 ${gl_lv}http://${public_ip}:16601${gl_bai} 来访问。"; return; fi
+        if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
+            local public_ip=$(curl -s https://ipinfo.io/ip); local config_file="/docker/goodluck/lucky.conf"; local web_port="16601"; local entry_path=""
+            if [ -f "$config_file" ]; then
+                web_port=$(grep "web_port" "$config_file" | awk -F'=' '{print $2}' | tr -d '[:space:]')
+                entry_path=$(grep "entry_path" "$config_file" | awk -F'=' '{print $2}' | tr -d '[:space:]' | sed 's/"//g')
+            fi
+            echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"; echo -e "你可以通过 ${gl_lv}http://${public_ip}:${web_port}${entry_path}${gl_bai} 来访问。"; return
+        fi
         echo -e "${gl_lan}正在创建数据目录 /docker/goodluck...${gl_bai}"; mkdir -p /docker/goodluck
         echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"; docker pull gdy666/lucky
         echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -p 16601:16601 -v /docker/goodluck:/goodluck gdy666/lucky
