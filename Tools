@@ -75,10 +75,10 @@ function ldnmp_setup() {
     sleep 1
 }
 
-# 99. 安装快捷指令
+# 安装快捷指令的核心函数 (被自动安装和更新功能调用)
 function install_shortcut() {
   # --- 配置 ---
-  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools" # <-- 修正为你最终确认的有效URL
+  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
   local install_name="tools"
   local shortcut_name="y"
   local install_path="/usr/local/bin/${install_name}"
@@ -89,12 +89,12 @@ function install_shortcut() {
     clear
   fi
   
-  echo -e "${C_CYAN}开始安装快捷方式 '${shortcut_name}'...${C_RESET}"
+  echo -e "${C_CYAN}开始安装/更新快捷方式 '${shortcut_name}'...${C_RESET}"
 
   # 1. 检查 root 权限
   if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "${C_RED}错误：安装过程需要 root 权限才能写入 /usr/local/bin/${C_RESET}"
-    echo -e "${C_YELLOW}请尝试使用 'sudo bash <(curl...)' 来运行此脚本。${C_RESET}"
+    echo -e "${C_RED}错误：此操作需要 root 权限才能写入 /usr/local/bin/${C_RESET}"
+    echo -e "${C_YELLOW}请尝试使用 'sudo' 运行此脚本。${C_RESET}"
     press_any_key_to_continue
     return 1 # 返回失败状态码
   fi
@@ -118,7 +118,7 @@ function install_shortcut() {
   ln -sf "${install_path}" "${shortcut_path}"
 
   # 5. 提示成功信息
-  echo -e "\n${C_GREEN}🎉 恭喜！快捷方式安装成功！${C_RESET}"
+  echo -e "\n${C_GREEN}🎉 恭喜！操作成功！${C_RESET}"
   echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}exec $SHELL${C_RESET} 来刷新环境。"
   echo -e "之后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
   
@@ -137,7 +137,7 @@ function update_script() {
   install_shortcut
 }
 
-# 000. 卸载脚本 # <--- 这是新增的整个卸载功能函数
+# 000. 卸载脚本
 function uninstall_script() {
   clear
   echo -e "${C_CYAN}开始卸载脚本和快捷方式...${C_RESET}"
@@ -203,8 +203,7 @@ function main_menu() {
   # ... 省略部分菜单项 ...
   echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
   echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}99.${C_RESET} (重新)安装快捷指令    ${C_GREEN}00.${C_RESET} 更新脚本"
-  echo -e " ${C_GREEN}000.${C_RESET} 卸载脚本" # <--- 这里是新增的菜单项
+  echo -e " ${C_GREEN}00.${C_RESET} 更新脚本              ${C_GREEN}000.${C_RESET} 卸载脚本"
   echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
   echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
   read -p "请输入你的选择: " choice
@@ -222,14 +221,10 @@ function main_loop() {
         update_system
         ;;
       # ... 省略部分 case ...
-      99) 
-        local auto_install="false" # 从菜单选择，不是自动安装
-        install_shortcut
-        ;;
       00)
         update_script
         ;;
-      000) # <--- 这里是新增的 case 分支
+      000)
         uninstall_script
         ;;
       0)
