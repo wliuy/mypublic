@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.2.5 (功能完整最终版)
+# AYANG's Toolbox v1.2.6 (功能完整最终版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.2.5"
+readonly SCRIPT_VERSION="1.2.6"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -200,12 +200,35 @@ function system_tools() {
     function add_swap_menu() {
         function _do_add_swap() {
             local swap_size=$1
-            echo "正在创建新的swap文件..."; fallocate -l ${swap_size}M /swapfile_new; chmod 600 /swapfile_new; mkswap /swapfile_new
-            echo "启用新的swap文件..."; swapon /swapfile_new
-            if [ -f /swapfile ]; then echo "关闭并移除旧的swap文件..."; swapoff /swapfile >/dev/null 2>&1; rm -f /swapfile; fi
-            echo "重命名新的swap文件..."; mv /swapfile_new /swapfile
-            echo "更新fstab以实现开机自启..."; sed -i '/\/swapfile/d' /etc/fstab; echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
-            echo -e "${gl_lv}虚拟内存大小已成功调整为 ${swap_size}M${gl_bai}"
+            local new_swap_file="/swapfile_new"
+            local final_swap_file="/swapfile"
+
+            echo "正在创建新的swap文件 (使用 dd 命令，可能需要一点时间)..."
+            if dd if=/dev/zero of="${new_swap_file}" bs=1M count=${swap_size} &>/dev/null; then
+                chmod 600 "${new_swap_file}"
+                if mkswap "${new_swap_file}" &>/dev/null; then
+                    if swapon "${new_swap_file}"; then
+                        echo "启用新的swap文件成功。"
+                        if [ -f "${final_swap_file}" ]; then
+                            echo "关闭并移除旧的swap文件..."
+                            swapoff "${final_swap_file}" >/dev/null 2>&1
+                            rm -f "${final_swap_file}"
+                        fi
+                        mv "${new_swap_file}" "${final_swap_file}"
+                        sed -i '/swapfile/d' /etc/fstab
+                        echo "${final_swap_file} swap swap defaults 0 0" >> /etc/fstab
+                        echo -e "${gl_lv}虚拟内存大小已成功调整为 ${swap_size}M${gl_bai}"
+                    else
+                        echo -e "${gl_hong}错误: 启用新的swap文件失败 (swapon)。${gl_bai}"
+                        rm -f "${new_swap_file}"
+                    fi
+                else
+                    echo -e "${gl_hong}错误: 格式化swap文件失败 (mkswap)。${gl_bai}"
+                    rm -f "${new_swap_file}"
+                fi
+            else
+                echo -e "${gl_hong}错误: 创建swap文件失败 (dd)。请检查磁盘空间。${gl_bai}"
+            fi
         }
         while true; do
             clear; echo "设置虚拟内存"
@@ -400,7 +423,7 @@ function docker_management() {
     while true; do
       clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
       echo -e "${gl_kjlan}1.   ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}2.   ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}3.   ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}4.   ${gl_bai}Docker镜像管理"; echo -e "${gl_kjlan}5.   ${gl_bai}Docker网络管理"; echo -e "${gl_kjlan}6.   ${gl_bai}Docker卷管理"; echo -e "${gl_kjlan}7.   ${gl_bai}清理无用的Docker数据"; echo -e "${gl_kjlan}8.   ${gl_bai}更换Docker源"; echo -e "${gl_kjlan}20.  ${gl_bai}卸载Docker环境"
-      echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_kai}0.   ${gl_bai}返回主菜单"; echo -e "${gl_hong}------------------------${gl_bai}"
+      echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"; echo -e "${gl_hong}------------------------${gl_bai}"
       read -p "请输入你的选择: " sub_choice
       case $sub_choice in
         1) clear; install_add_docker; press_any_key_to_continue ;;
