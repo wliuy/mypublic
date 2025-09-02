@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.20 (新增Memos立即备份功能)
+# AYANG's Toolbox v1.3.21 (修复Memos远程备份容器和目录不存在的问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.20"
+readonly SCRIPT_VERSION="1.3.21"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -457,6 +457,10 @@ function app_management() {
                 echo -e "❌ SSH 免密登录失败，请检查端口、防火墙或密码。"
                 return 1
             fi
+            
+            # 确保远程目录存在
+            echo -e "📁 正在远程创建备份目录 ${remote_dir}..."
+            ssh -p "$remote_port" "${remote_user}@${remote_host}" "mkdir -p '${remote_dir}'"
 
             # 创建同步脚本
             echo -e "📝 创建同步脚本 ${SYNC_SCRIPT_BASE}..."
@@ -465,14 +469,14 @@ function app_management() {
             
             cat > "${sync_script_path}" <<EOF
 #!/bin/bash
-# 停止远程 memos 容器
-ssh -p ${remote_port} ${remote_user}@${remote_host} "docker stop memos"
+# 停止远程 memos 容器 (如果存在)
+ssh -p ${remote_port} ${remote_user}@${remote_host} "docker inspect --format '{{.State.Running}}' memos" | grep -q "true" && ssh -p ${remote_port} ${remote_user}@${remote_host} "docker stop memos"
 
 # 同步本地目录到远程
 rsync -avz --checksum -e "ssh -p ${remote_port}" --delete "${local_dir}" ${remote_user}@${remote_host}:"${remote_dir}"
 
-# 启动远程 memos 容器
-ssh -p ${remote_port} ${remote_user}@${remote_host} "docker start memos"
+# 启动远程 memos 容器 (如果存在)
+ssh -p ${remote_port} ${remote_user}@${remote_host} "docker inspect --format '{{.State.Running}}' memos" | grep -q "false" && ssh -p ${remote_port} ${remote_user}@${remote_host} "docker start memos"
 EOF
             chmod +x "${sync_script_path}"
 
