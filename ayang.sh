@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.2.8 (安装提示优化版)
+# AYANG's Toolbox v1.2.9 (功能完整最终修复版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.2.8"
+readonly SCRIPT_VERSION="1.2.9"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -55,6 +55,33 @@ install() {
 		fi
 	done
 }
+
+# 通用卸载函数 (源于 kejilion.sh)
+remove() {
+	if [ $# -eq 0 ]; then
+		echo "未提供软件包参数!"
+		return 1
+	fi
+
+	for package in "$@"; do
+		echo -e "${gl_huang}正在卸载 $package...${gl_bai}"
+		if command -v dnf &>/dev/null; then
+			dnf remove -y "$package"
+		elif command -v yum &>/dev/null; then
+			yum remove -y "$package"
+		elif command -v apt &>/dev/null; then
+			apt purge -y "$package"
+		elif command -v apk &>/dev/null; then
+			apk del "$package"
+		elif command -v pacman &>/dev/null; then
+			pacman -Rns --noconfirm "$package"
+		else
+			echo "未知的包管理器!"
+			return 1
+		fi
+	done
+}
+
 
 # --- 功能函数定义 ---
 
@@ -127,72 +154,148 @@ function system_clean() {
 
 # 4. 系统工具
 function system_tools() {
-    # 此处省略了详细的系统工具代码，以保持脚本简洁
-    echo "系统工具功能..."
-    sleep 1
+    function restart_ssh() {
+        systemctl restart sshd >/dev/null 2>&1 || systemctl restart ssh >/dev/null 2>&1
+    }
+    function add_sshpasswd() {
+        echo "设置你的ROOT密码"
+        passwd
+        sed -i 's/^\s*#\?\s*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+        sed -i 's/^\s*#\?\s*PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
+        rm -rf /etc/ssh/sshd_config.d/* /etc/ssh/ssh_config.d/* >/dev/null 2>&1
+        restart_ssh
+        echo -e "${gl_lv}ROOT密码登录已启用！${gl_bai}"
+    }
+    function open_all_ports() {
+        install iptables
+        iptables -P INPUT ACCEPT; iptables -P FORWARD ACCEPT; iptables -P OUTPUT ACCEPT; iptables -F
+        echo "所有端口已开放 (iptables policy ACCEPT)"
+    }
+    function change_ssh_port() {
+        sed -i 's/#Port/Port/' /etc/ssh/sshd_config
+        local current_port=$(grep -E '^ *Port [0-9]+' /etc/ssh/sshd_config | awk '{print $2}')
+        read -p "当前 SSH 端口是: ${current_port}。请输入新的端口号 (1-65535): " new_port
+        if [[ $new_port =~ ^[0-9]+$ ]] && [ "$new_port" -ge 1 ] && [ "$new_port" -le 65535 ]; then
+            sed -i "s/Port [0-9]\+/Port $new_port/g" /etc/ssh/sshd_config
+            restart_ssh; echo "SSH 端口已修改为: $new_port"
+        else
+            echo "无效的端口号。"
+        fi
+    }
+    function set_dns_ui() {
+        while true; do
+            clear; echo "优化DNS地址"; echo "------------------------"; echo "当前DNS地址"; cat /etc/resolv.conf; echo "------------------------"; echo ""; echo "1. 国外DNS (Google/Cloudflare)"; echo "2. 国内DNS (阿里/腾讯)"; echo "3. 手动编辑"; echo "------------------------"; echo "0. 返回"; echo "------------------------"
+            read -p "请输入你的选择: " dns_choice
+            local dns_config=""
+            case "$dns_choice" in
+                1) dns_config="nameserver 8.8.8.8\nnameserver 1.1.1.1\nnameserver 2001:4860:4860::8888\nnameserver 2606:4700:4700::1111";;
+                2) dns_config="nameserver 223.5.5.5\nnameserver 119.29.29.29";;
+                3) install nano; nano /etc/resolv.conf; continue;;
+                0) break;;
+                *) echo "无效输入"; sleep 1; continue;;
+            esac
+            echo -e "$dns_config" > /etc/resolv.conf; echo "DNS 已更新！"; sleep 1
+        done
+    }
+    function add_swap_menu() {
+        function _do_add_swap() {
+            local swap_size=$1
+            swapoff /swapfile >/dev/null 2>&1
+            rm -f /swapfile >/dev/null 2>&1
+            echo "正在创建新的swap文件 (使用 fallocate 命令)..."
+            fallocate -l ${swap_size}M /swapfile
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            sed -i '/swapfile/d' /etc/fstab
+            echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+            echo -e "${gl_lv}虚拟内存大小已成功调整为 ${swap_size}M${gl_bai}"
+        }
+        while true; do
+            clear; echo "设置虚拟内存"
+            local swap_info=$(free -m | awk 'NR==3{used=$3; total=$2; if (total == 0) {percentage=0} else {percentage=used*100/total}; printf "%dM/%dM (%d%%)", used, total, percentage}')
+            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M         2. 分配2048M"; echo "3. 分配4096M         4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            read -p "请输入你的选择: " swap_choice
+            case "$swap_choice" in
+              1) _do_add_swap 1024; break ;;
+              2) _do_add_swap 2048; break ;;
+              3) _do_add_swap 4096; break ;;
+              4) read -p "请输入虚拟内存大小（单位M）: " new_swap; _do_add_swap "$new_swap"; break ;;
+              0) break ;;
+              *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function timezone_menu() {
+        function _current_timezone() {
+            if grep -q 'Alpine' /etc/issue 2>/dev/null; then date +"%Z %z"; else timedatectl | grep "Time zone" | awk '{print $3}'; fi
+        }
+        function _set_timedate() {
+            if grep -q 'Alpine' /etc/issue 2>/dev/null; then install tzdata; cp /usr/share/zoneinfo/${1} /etc/localtime; else timedatectl set-timezone ${1}; fi
+        }
+        while true; do
+            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间             2.  中国香港时间"; echo "3.  日本东京时间             4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间             12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间             22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) _set_timedate Asia/Shanghai ;;
+                2) _set_timedate Asia/Hong_Kong ;;
+                3) _set_timedate Asia/Tokyo ;;
+                4) _set_timedate Asia/Seoul ;;
+                5) _set_timedate Asia/Singapore ;;
+                11) _set_timedate Europe/London ;;
+                12) _set_timedate Europe/Paris ;;
+                13) _set_timedate Europe/Berlin ;;
+                21) _set_timedate America/Los_Angeles ;;
+                22) _set_timedate America/New_York ;;
+                23) _set_timedate America/Vancouver ;;
+                31) _set_timedate UTC ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    while true; do
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. ROOT密码登录模式"; echo "2. 修改登录密码"; echo "3. 开放所有端口"; echo "4. 修改SSH连接端口"; echo "5. 优化DNS地址"; echo "6. 查看端口占用状态"; echo "7. 修改虚拟内存大小"; echo "8. 系统时区调整"; echo "9. 定时任务管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        read -p "请输入你的选择: " tool_choice
+        case $tool_choice in
+            1) clear; add_sshpasswd; press_any_key_to_continue ;;
+            2) clear; echo "设置当前用户密码"; passwd; press_any_key_to_continue ;;
+            3) clear; open_all_ports; press_any_key_to_continue ;;
+            4) clear; change_ssh_port; press_any_key_to_continue ;;
+            5) set_dns_ui ;;
+            6) clear; install ss; ss -tulnpe; press_any_key_to_continue ;;
+            7) add_swap_menu; press_any_key_to_continue ;;
+            8) timezone_menu ;;
+            9) install cron || install cronie; clear; crontab -e ;;
+            0) break ;;
+            *) echo "无效输入"; sleep 1 ;;
+        esac
+    done
 }
 
 # 5. 应用管理
-function install_lucky() {
-    clear
-    echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}"
-    if ! command -v docker &>/dev/null; then
-        echo -e "${gl_hong}错误：Docker 未安装。请先在 Docker 管理菜单中安装 Docker 环境。${gl_bai}"
-        return
-    fi
-
-    if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
-        local public_ip=$(curl -s https://ipinfo.io/ip)
-        echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"
-        echo -e "你可以通过 ${gl_lv}http://${public_ip}:16601${gl_bai} 来访问 Lucky 面板。"
-        return
-    fi
-    
-    echo -e "${gl_lan}正在创建数据目录 /docker/goodluck...${gl_bai}"
-    mkdir -p /docker/goodluck
-
-    echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"
-    docker pull gdy666/lucky
-
-    echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"
-    docker run -d --name lucky --restart always --net=host -p 16601:16601 -v /docker/goodluck:/goodluck gdy666/lucky
-
-    sleep 3
-    if docker ps -q -f name=^lucky$; then
-        local public_ip=$(curl -s https://ipinfo.io/ip)
-        echo -e "${gl_lv}Lucky 安装成功！${gl_bai}"
-        echo -e "你可以通过 ${gl_huang}http://${public_ip}:16601${gl_bai} 来访问 Lucky 面板。"
-    else
-        echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
-    fi
-}
-function uninstall_lucky() {
-    clear
-    echo -e "${gl_kjlan}正在卸载 Lucky 反代...${gl_bai}"
-    if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
-        echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"
-        return
-    fi
-
-    echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有配置文件和数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-    read -p "如确认继续，请输入 'y' : " confirm
-    if [[ "${confirm,,}" != "y" ]]; then
-        echo -e "${gl_huang}操作已取消。${gl_bai}"
-        return
-    fi
-
-    echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"
-    docker stop lucky && docker rm lucky
-    
-    echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"
-    docker rmi gdy666/lucky
-    
-    echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"
-    rm -rf /docker/goodluck
-    
-    echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
-}
 function app_management() {
+    function install_lucky() {
+        clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+        if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then local public_ip=$(curl -s https://ipinfo.io/ip); echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"; echo -e "你可以通过 ${gl_lv}http://${public_ip}:16601${gl_bai} 来访问。"; return; fi
+        echo -e "${gl_lan}正在创建数据目录 /docker/goodluck...${gl_bai}"; mkdir -p /docker/goodluck
+        echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"; docker pull gdy666/lucky
+        echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -p 16601:16601 -v /docker/goodluck:/goodluck gdy666/lucky
+        sleep 3
+        if docker ps -q -f name=^lucky$; then local public_ip=$(curl -s https://ipinfo.io/ip); echo -e "${gl_lv}Lucky 安装成功！访问 http://${public_ip}:16601${gl_bai}"; else echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"; fi
+    }
+    function uninstall_lucky() {
+        clear; echo -e "${gl_kjlan}正在卸载 Lucky 反代...${gl_bai}"
+        if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return; fi
+        echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
+        read -p "如确认继续，请输入 'y' : " confirm
+        if [[ "${confirm,,}" != "y" ]]; then echo -e "${gl_huang}操作已取消。${gl_bai}"; return; fi
+        echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
+        echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
+        echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
+        echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
+    }
     while true; do
         clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  1. Lucky 反代"; echo "  2. Uptime Kuma (监控工具)"; echo -e "  ${gl_hui}...更多应用待添加...${gl_bai}"; echo; echo "卸载:"; echo "  11. 卸载 Lucky 反代"; echo "  12. 卸载 Uptime Kuma"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
@@ -210,10 +313,147 @@ function app_management() {
 
 # 6. Docker管理
 function docker_management() {
-    # 此处省略了完整的Docker管理代码，以保持脚本简洁
-    echo -e "${gl_huang}Docker管理功能正在开发中...${gl_bai}"
-    sleep 1
+    function docker_tato() {
+        local container_count=$(docker ps -a -q 2>/dev/null | wc -l)
+        local image_count=$(docker images -q 2>/dev/null | wc -l)
+        local network_count=$(docker network ls -q 2>/dev/null | wc -l)
+        local volume_count=$(docker volume ls -q 2>/dev/null | wc -l)
+        if command -v docker &> /dev/null; then
+            echo -e "${gl_kjlan}------------------------"
+            echo -e "${gl_lv}环境已经安装${gl_bai}  容器: ${gl_lv}$container_count${gl_bai}  镜像: ${gl_lv}$image_count${gl_bai}  网络: ${gl_lv}$network_count${gl_bai}  卷: ${gl_lv}$volume_count${gl_bai}"
+        fi
+    }
+    function install_add_docker() {
+        echo -e "${gl_huang}正在安装docker环境...${gl_bai}"
+        if [ -f /etc/os-release ] && grep -q "Fedora" /etc/os-release; then
+            install_add_docker_guanfang
+        elif command -v dnf &>/dev/null; then
+            dnf update -y; dnf install -y yum-utils; rm -f /etc/yum.repos.d/docker*.repo > /dev/null
+            if [[ "$(curl -s ipinfo.io/country)" == "CN" ]]; then curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo | tee /etc/yum.repos.d/docker-ce.repo > /dev/null
+            else yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null; fi
+            dnf install -y docker-ce docker-ce-cli containerd.io; install_add_docker_cn
+        elif command -v apt &>/dev/null || command -v yum &>/dev/null; then
+            install_add_docker_guanfang
+        else
+            install docker docker-compose; install_add_docker_cn
+        fi
+        sleep 2
+    }
+    function install_add_docker_cn() {
+        if [[ "$(curl -s ipinfo.io/country)" == "CN" ]]; then
+        cat > /etc/docker/daemon.json << EOF
+{ "registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1panel.live", "https://registry.dockermirror.com"] }
+EOF
+        fi
+        systemctl enable docker >/dev/null 2>&1; systemctl start docker >/dev/null 2>&1; systemctl restart docker >/dev/null 2>&1
+    }
+    function install_add_docker_guanfang() {
+        if [[ "$(curl -s ipinfo.io/country)" == "CN" ]]; then sh <(curl -sSL https://linuxmirrors.cn/docker.sh) --mirror Aliyun
+        else curl -fsSL https://get.docker.com | sh; fi
+        install_add_docker_cn
+    }
+    function docker_ps() {
+        while true; do
+            clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新的容器"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "2. 启动指定容器             6. 启动所有容器"; echo "3. 停止指定容器             7. 停止所有容器"; echo "4. 删除指定容器             8. 删除所有容器"; echo "5. 重启指定容器             9. 重启所有容器"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "11. 进入指定容器           12. 查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "请输入创建命令: " dockername; $dockername ;;
+                2) read -p "请输入容器名: " dockername; docker start $dockername ;;
+                3) read -p "请输入容器名: " dockername; docker stop $dockername ;;
+                4) read -p "请输入容器名: " dockername; docker rm -f $dockername ;;
+                5) read -p "请输入容器名: " dockername; docker restart $dockername ;;
+                6) docker start $(docker ps -a -q) ;;
+                7) docker stop $(docker ps -q) ;;
+                8) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有容器吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker rm -f $(docker ps -a -q); fi ;;
+                9) docker restart $(docker ps -q) ;;
+                11) read -p "请输入容器名: " dockername; docker exec -it $dockername /bin/sh; press_any_key_to_continue ;;
+                12) read -p "请输入容器名: " dockername; docker logs $dockername; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function docker_image() {
+        while true; do
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像             3. 删除指定镜像"; echo "2. 更新指定镜像             4. 删除所有镜像"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "请输入镜像名: " name; docker pull $name ;;
+                2) read -p "请输入镜像名: " name; docker pull $name ;;
+                3) read -p "请输入镜像名: " name; docker rmi -f $name ;;
+                4) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有镜像吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker rmi -f $(docker images -q); fi ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function docker_network() {
+        while true; do
+            clear; echo "Docker网络列表"; echo -e "${gl_hong}------------------------------------------------------------${gl_bai}"; docker network ls; echo ""
+            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "设置新网络名: " network; docker network create $network ;;
+                2) read -p "加入网络名: " network; read -p "哪些容器加入该网络: " names; for name in $names; do docker network connect $network $name; done ;;
+                3) read -p "退出网络名: " network; read -p "哪些容器退出该网络: " names; for name in $names; do docker network disconnect $network $name; done ;;
+                4) read -p "请输入要删除的网络名: " network; docker network rm $network ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function docker_volume() {
+        while true; do
+            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "设置新卷名: " volume; docker volume create $volume ;;
+                2) read -p "输入删除卷名: " volume; docker volume rm $volume ;;
+                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker volume prune -f; fi ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    
+    while true; do
+      clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
+      echo -e "${gl_kjlan}1.   ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}2.   ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}3.   ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_kjlan}4.   ${gl_bai}Docker镜像管理"; echo -e "${gl_kjlan}5.   ${gl_bai}Docker网络管理"; echo -e "${gl_kjlan}6.   ${gl_bai}Docker卷管理"; echo -e "${gl_kjlan}7.   ${gl_bai}清理无用的Docker数据"; echo -e "${gl_kjlan}8.   ${gl_bai}更换Docker源"; echo -e "${gl_kjlan}20.  ${gl_bai}卸载Docker环境"
+      echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"; echo -e "${gl_hong}------------------------${gl_bai}"
+      read -p "请输入你的选择: " sub_choice
+      case $sub_choice in
+        1) clear; install_add_docker; press_any_key_to_continue ;;
+        2) clear; docker system df -v; press_any_key_to_continue ;;
+        3) docker_ps ;;
+        4) docker_image ;;
+        5) docker_network ;;
+        6) docker_volume ;;
+        7) 
+          clear; read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice
+          if [[ "${choice,,}" == "y" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
+          press_any_key_to_continue
+          ;;
+        8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
+        20) 
+          clear
+          read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
+          case "$choice" in
+            [Yy])
+              docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
+              remove docker docker-compose docker-ce docker-ce-cli containerd.io
+              rm -f /etc/docker/daemon.json; hash -r
+              ;;
+            *) echo "已取消" ;;
+          esac
+          press_any_key_to_continue
+          ;;
+        0) break ;;
+        *) echo "无效输入"; sleep 1 ;;
+      esac
+    done
 }
+
 
 # (核心功能) 安装快捷指令
 function install_shortcut() {
@@ -346,7 +586,7 @@ function main_loop() {
         3) clear; system_clean; press_any_key_to_continue ;;
         4) system_tools ;;
         5) app_management ;;
-        6) docker_management; press_any_key_to_continue ;;
+        6) docker_management ;;
         00) update_script ;;
         000) uninstall_script ;;
         0) clear; exit 0 ;;
