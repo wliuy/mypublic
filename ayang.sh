@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.23 (修复Memos远程备份执行错误)
+# AYANG's Toolbox v1.3.24 (Memos立即备份功能优化)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.23"
+readonly SCRIPT_VERSION="1.3.24"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -382,8 +382,7 @@ function app_management() {
                 echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
                 local public_ip=$(curl -s https://ipinfo.io/ip)
                 echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
-                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
-                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 return
             fi
@@ -401,8 +400,7 @@ function app_management() {
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
                 echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
-                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
-                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
             else
@@ -465,24 +463,27 @@ function app_management() {
             
             cat > "${sync_script_path}" <<EOF
 #!/bin/bash
-# 在远程服务器上执行备份任务
-ssh -p ${remote_port} ${remote_user}@${remote_host} << SSH_EOF
-# 确保备份目录存在
-mkdir -p "${remote_dir}"
 
-# 停止远程 memos 容器 (如果存在)
-if docker inspect --format '{{.State.Running}}' memos &>/dev/null; then
-    docker stop memos
+REMOTE_HOST=${remote_host}
+REMOTE_PORT=${remote_port}
+REMOTE_USER=${remote_user}
+LOCAL_DIR="${local_dir}"
+REMOTE_DIR="${remote_dir}"
+
+# 确保远程目录存在
+ssh -p \$REMOTE_PORT \$REMOTE_USER@\$REMOTE_HOST "mkdir -p '\$REMOTE_DIR'"
+
+# 检查远程 memos 容器是否存在且正在运行
+if ssh -p \$REMOTE_PORT \$REMOTE_USER@\$REMOTE_HOST "docker inspect --format '{{.State.Running}}' memos" | grep -q "true"; then
+    echo "停止远程 memos 容器..."
+    ssh -p \$REMOTE_PORT \$REMOTE_USER@\$REMOTE_HOST "docker stop memos"
+    rsync -avz --checksum --delete "\$LOCAL_DIR" \$REMOTE_USER@\$REMOTE_HOST:"\$REMOTE_DIR"
+    echo "启动远程 memos 容器..."
+    ssh -p \$REMOTE_PORT \$REMOTE_USER@\$REMOTE_HOST "docker start memos"
+else
+    echo "远程 memos 容器未运行或不存在，只同步数据..."
+    rsync -avz --checksum --delete "\$LOCAL_DIR" \$REMOTE_USER@\$REMOTE_HOST:"\$REMOTE_DIR"
 fi
-
-# 同步本地目录到远程
-rsync -avz --checksum --delete "$local_dir" ${remote_user}@${remote_host}:"${remote_dir}"
-
-# 启动远程 memos 容器 (如果存在)
-if docker inspect --format '{{.State.Running}}' memos &>/dev/null; then
-    docker start memos
-fi
-SSH_EOF
 EOF
             chmod +x "${sync_script_path}"
 
@@ -532,34 +533,35 @@ EOF
         function run_memos_sync() {
             clear; echo -e "${gl_kjlan}立即执行 Memos 备份...${gl_bai}"
             echo -e "----------------------------------------"
-            local configured_servers=""
+            local configured_scripts=""
             if [ -d "${SYNC_SCRIPT_BASE}" ]; then
-                configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+                configured_scripts=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null)
             fi
 
-            if [ -z "$configured_servers" ]; then
+            if [ -z "$configured_scripts" ]; then
                 echo -e "${gl_huang}未找到任何已配置的远程备份服务器。请先添加备份配置。${gl_bai}"
                 return
             fi
-
-            echo -e "${gl_kjlan}已配置的远程服务器:${gl_bai}"
-            echo "${configured_servers}"
-            echo -e "----------------------------------------"
-
-            read -p "请输入要立即备份的服务器地址: " server_to_sync
-
-            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${server_to_sync}.sh"
-            if [ -f "$sync_script_path" ]; then
-                echo -e "${gl_lan}正在执行备份脚本...${gl_bai}"
+            
+            local total_backups=$(echo "$configured_scripts" | wc -l)
+            local backup_count=0
+            
+            echo -e "${gl_lan}正在对所有已配置的远程服务器执行备份...${gl_bai}\n"
+            
+            echo "$configured_scripts" | while read -r script_name; do
+                backup_count=$((backup_count + 1))
+                local server_address=$(echo "$script_name" | sed 's/sync_memos_//g;s/.sh//g')
+                echo -e "▶️  (${backup_count}/${total_backups}) 正在备份到服务器: ${gl_lv}${server_address}${gl_bai}"
+                
+                local sync_script_path="${SYNC_SCRIPT_BASE}/${script_name}"
                 bash "$sync_script_path"
+                
                 if [ $? -eq 0 ]; then
-                    echo -e "\n${gl_lv}✅ 备份任务执行完毕。${gl_bai}"
+                    echo -e "✅ 备份任务执行完毕。\n"
                 else
-                    echo -e "\n${gl_hong}❌ 备份任务执行失败。请检查日志。${gl_bai}"
+                    echo -e "${gl_hong}❌ 备份任务执行失败。\n"
                 fi
-            else
-                echo -e "${gl_hong}错误：未找到服务器 ${server_to_sync} 的备份脚本。${gl_bai}"
-            fi
+            done
         }
 
         function view_memos_sync_log() {
@@ -597,7 +599,7 @@ EOF
                         echo -e "${gl_hong}----------------------------------------${gl_bai}"
                         echo "1. 添加备份配置"
                         echo "2. 删除备份配置"
-                        echo "3. 立即备份"
+                        echo "3. 立即备份所有"
                         echo -e "${gl_hong}----------------------------------------${gl_bai}"
                         echo "0. 返回上一级菜单"
                         echo -e "${gl_hong}----------------------------------------${gl_bai}"
