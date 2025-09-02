@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.9 (隐藏FileBrowser日志输出)
+# AYANG's Toolbox v1.3.10 (新增Memos管理功能)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.9"
+readonly SCRIPT_VERSION="1.3.10"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -365,6 +365,125 @@ function app_management() {
         fi
     }
 
+    # 新增 Memos 相关函数
+    function memos_management() {
+        local MEMOS_DATA_DIR="/wliuy/memos"
+        local SYNC_SCRIPT="/wliuy/memos/sync_memos.sh"
+        local LOG_FILE="/var/log/sync_memos.log"
+
+        function install_memos() {
+            clear; echo -e "${gl_kjlan}正在安装 Memos...${gl_bai}"
+            if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+            if docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+                echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
+                local public_ip=$(curl -s https://ipinfo.io/ip)
+                echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
+                return
+            fi
+
+            echo -e "${gl_lan}正在创建数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"; mkdir -p ${MEMOS_DATA_DIR}
+            echo -e "${gl_lan}正在拉取 neosmemo/memos 镜像并启动容器...${gl_bai}"
+            docker run -d --name memos --restart unless-stopped \
+              -p 5230:5230 \
+              -v ${MEMOS_DATA_DIR}:/var/opt/memos \
+              neosmemo/memos:latest
+
+            sleep 5
+            if docker ps -q -f name=^memos$; then
+                local public_ip=$(curl -s https://ipinfo.io/ip)
+                echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
+                echo -e "-----------------------------------"
+                echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
+                echo -e "默认用户名: ${gl_lv}memos${gl_bai}"
+                echo -e "默认密码: ${gl_lv}默认无密码，首次登录需自行设置${gl_bai}"
+                echo -e "-----------------------------------"
+            else
+                echo -e "${gl_hong}Memos 容器启动失败，请检查 Docker 日志。${gl_bai}"
+            fi
+        }
+
+        function setup_memos_sync() {
+            clear; echo -e "${gl_kjlan}正在配置 Memos 自动备份...${gl_bai}"
+
+            read -p "请输入远程服务器地址 (REMOTE_HOST): " remote_host
+            read -p "请输入远程服务器SSH端口 (REMOTE_PORT): " remote_port
+            read -p "请输入远程服务器用户名 (REMOTE_USER): " remote_user
+            read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
+            echo ""
+
+            # 检查并安装 sshpass
+            if ! command -v sshpass &> /dev/null; then
+                echo -e "📦 安装 sshpass..."
+                install sshpass
+            else
+                echo -e "📦 sshpass 已安装，跳过安装"
+            fi
+            
+            # 生成 SSH 密钥
+            echo -e "🔐 检查 SSH 密钥..."
+            if [ ! -f ~/.ssh/id_rsa ]; then
+                echo -e "🗝️ 生成新的 SSH 密钥..."
+                ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+            fi
+
+            # 配置 SSH 免密登录
+            echo -e "🔗 配置 SSH 免密登录（端口 $remote_port）..."
+            sshpass -p "$remote_pass" ssh-copy-id -p "$remote_port" -o StrictHostKeyChecking=no "${remote_user}@${remote_host}" >/dev/null 2>&1
+            
+            # 测试 SSH 连接
+            echo -e "✅ 测试免密登录..."
+            if ssh -p "$remote_port" -o BatchMode=yes "${remote_user}@${remote_host}" 'echo 连接成功' &>/dev/null; then
+                echo -e "✅ SSH 免密登录配置成功！"
+            else
+                echo -e "❌ SSH 免密登录失败，请检查端口、防火墙或密码。"
+                return 1
+            fi
+
+            # 创建同步脚本
+            echo -e "📝 创建同步脚本 ${SYNC_SCRIPT}..."
+            cat > "${SYNC_SCRIPT}" <<EOF
+#!/bin/bash
+# 停止远程 memos 容器
+ssh -p ${remote_port} ${remote_user}@${remote_host} "docker stop memos"
+
+# 同步本地目录到远程
+rsync -avz --checksum -e "ssh -p ${remote_port}" --delete "$MEMOS_DATA_DIR" ${remote_user}@${remote_host}:"/wliuy/memos/"
+
+# 启动远程 memos 容器
+ssh -p ${remote_port} ${remote_user}@${remote_host} "docker start memos"
+EOF
+            chmod +x "${SYNC_SCRIPT}"
+
+            # 添加定时任务
+            echo -e "📅 添加定时任务（每天 0 点执行）..."
+            ( crontab -l 2>/dev/null | grep -v "${SYNC_SCRIPT}" ; echo "0 0 * * * ${SYNC_SCRIPT} >> ${LOG_FILE} 2>&1" ) | crontab -
+
+            echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据。"
+        }
+        
+        function view_memos_sync_log() {
+            clear; echo -e "${gl_kjlan}正在查看 Memos 备份日志... (按 Ctrl+C 退出)${gl_bai}"
+            if [ -f "${LOG_FILE}" ]; then
+                tail -f "${LOG_FILE}"
+            else
+                echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
+            fi
+        }
+
+        while true; do
+            clear; echo "Memos 管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. 安装 Memos"; echo "2. 自动备份到远程服务器"; echo "3. 查看备份日志"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回上一级菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " memos_choice
+            case $memos_choice in
+                1) install_memos; press_any_key_to_continue ;;
+                2) setup_memos_sync; press_any_key_to_continue ;;
+                3) view_memos_sync_log; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+
     function uninstall_filebrowser() {
         clear; echo -e "${gl_kjlan}正在卸载 FileBrowser...${gl_bai}"
         if ! docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
@@ -399,15 +518,56 @@ function app_management() {
         echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
         echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
     }
+    
+    function uninstall_memos() {
+        local MEMOS_DATA_DIR="/wliuy/memos"
+        local SYNC_SCRIPT="/wliuy/memos/sync_memos.sh"
+        local LOG_FILE="/var/log/sync_memos.log"
+        
+        clear; echo -e "${gl_kjlan}正在卸载 Memos...${gl_bai}"
+        if ! docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+            echo -e "${gl_huang}未找到 Memos 容器，无需卸载。${gl_bai}"; return;
+        fi
+
+        echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有数据！${gl_bai}"
+        echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
+        echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
+        read -p "如确认继续，请输入 'y' : " confirm
+        if [[ "${confirm,,}" != "y" ]]; then echo -e "${gl_huang}操作已取消。${gl_bai}"; return; fi
+        
+        echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
+        docker stop memos && docker rm memos
+        
+        echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
+        docker rmi neosmemo/memos:latest
+        
+        echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
+        rm -rf ${MEMOS_DATA_DIR}
+        
+        echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
+        if [ -f "${SYNC_SCRIPT}" ]; then
+            rm -f "${SYNC_SCRIPT}"
+            ( crontab -l 2>/dev/null | grep -v "${SYNC_SCRIPT}" ) | crontab -
+        fi
+        
+        echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
+        if [ -f "${LOG_FILE}" ]; then
+            rm -f "${LOG_FILE}"
+        fi
+        
+        echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
+    }
 
     while true; do
-        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  1. Lucky 反代"; echo "  2. FileBrowser (文件管理)"; echo -e "  ${gl_hui}...更多应用待添加...${gl_bai}"; echo; echo "卸载:"; echo "  11. 卸载 Lucky 反代"; echo "  12. 卸载 FileBrowser"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "应用管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "安装:"; echo "  1. Lucky 反代"; echo "  2. FileBrowser (文件管理)"; echo "  3. Memos (轻量笔记)"; echo -e "  ${gl_hui}...更多应用待添加...${gl_bai}"; echo; echo "卸载:"; echo "  11. 卸载 Lucky 反代"; echo "  12. 卸载 FileBrowser"; echo "  13. 卸载 Memos"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
             1) install_lucky; press_any_key_to_continue ;;
             2) install_filebrowser; press_any_key_to_continue ;;
+            3) memos_management ;;
             11) uninstall_lucky; press_any_key_to_continue ;;
             12) uninstall_filebrowser; press_any_key_to_continue ;;
+            13) uninstall_memos; press_any_key_to_continue ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
@@ -706,6 +866,7 @@ function main_loop() {
 
 readonly INSTALL_PATH="/usr/local/bin/y"
 
+# 判断脚本是否已安装
 if [ ! -f "${INSTALL_PATH}" ]; then
   clear
   echo -e "${gl_kjlan}欢迎使用 AYANG's Toolbox, 检测到是首次运行。${gl_bai}"
@@ -724,4 +885,5 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   echo -e "\n${gl_lv}安装流程执行完毕！正在进入主菜单...${gl_bai}"
 fi
 
+# 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
 main_loop
