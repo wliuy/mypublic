@@ -193,7 +193,7 @@ function docker_container_menu() {
             1) read -p "请输入要启动的容器名或ID: " name; docker start $name ;;
             2) read -p "请输入要停止的容器名或ID: " name; docker stop $name ;;
             3) read -p "请输入要删除的容器名或ID: " name; docker rm -f $name ;;
-            4. restart_container) read -p "请输入要重启的容器名或ID: " name; docker restart $name ;;
+            4) read -p "请输入要重启的容器名或ID: " name; docker restart $name ;; # <--- 这里已修正
             5) read -p "请输入要查看日志的容器名或ID: " name; docker logs $name ;;
             6) read -p "请输入要进入的容器名或ID: " name; docker exec -it $name /bin/sh ;;
             0) break ;;
