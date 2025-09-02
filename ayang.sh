@@ -5,7 +5,7 @@
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.25"
+readonly SCRIPT_VERSION="1.3.22"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
