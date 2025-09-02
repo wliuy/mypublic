@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.23 (修复Memos备份执行错误)
+# AYANG's Toolbox v1.3.23 (修复Memos远程备份执行错误)
 #
 
 # --- 全局配置 ---
@@ -382,7 +382,8 @@ function app_management() {
                 echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
                 local public_ip=$(curl -s https://ipinfo.io/ip)
                 echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
-                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
+                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
+                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 return
             fi
@@ -400,7 +401,8 @@ function app_management() {
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
                 echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
-                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
+                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
+                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
             else
@@ -455,10 +457,6 @@ function app_management() {
                 echo -e "❌ SSH 免密登录失败，请检查端口、防火墙或密码。"
                 return 1
             fi
-            
-            # 确保远程目录存在
-            echo -e "📁 正在远程创建备份目录 ${remote_dir}..."
-            ssh -p "$remote_port" "${remote_user}@${remote_host}" "mkdir -p '${remote_dir}'"
 
             # 创建同步脚本
             echo -e "📝 创建同步脚本 ${SYNC_SCRIPT_BASE}..."
@@ -467,14 +465,24 @@ function app_management() {
             
             cat > "${sync_script_path}" <<EOF
 #!/bin/bash
+# 在远程服务器上执行备份任务
+ssh -p ${remote_port} ${remote_user}@${remote_host} << SSH_EOF
+# 确保备份目录存在
+mkdir -p "${remote_dir}"
+
 # 停止远程 memos 容器 (如果存在)
-ssh -p ${remote_port} ${remote_user}@${remote_host} "docker inspect --format '{{.State.Running}}' memos" | grep -q "true" && ssh -p ${remote_port} ${remote_user}@${remote_host} "docker stop memos"
+if docker inspect --format '{{.State.Running}}' memos &>/dev/null; then
+    docker stop memos
+fi
 
 # 同步本地目录到远程
-rsync -avz --checksum -e "ssh -p ${remote_port}" --delete "${local_dir}" ${remote_user}@${remote_host}:"${remote_dir}"
+rsync -avz --checksum --delete "$local_dir" ${remote_user}@${remote_host}:"${remote_dir}"
 
 # 启动远程 memos 容器 (如果存在)
-ssh -p ${remote_port} ${remote_user}@${remote_host} "docker inspect --format '{{.State.Running}}' memos" | grep -q "false" && ssh -p ${remote_port} ${remote_user}@${remote_host} "docker start memos"
+if docker inspect --format '{{.State.Running}}' memos &>/dev/null; then
+    docker start memos
+fi
+SSH_EOF
 EOF
             chmod +x "${sync_script_path}"
 
