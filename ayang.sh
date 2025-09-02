@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.1.2 (Docker功能完善版)
+# AYANG's Toolbox v1.1.3 (UI优化版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.1.2"
+readonly SCRIPT_VERSION="1.1.3"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -125,10 +125,10 @@ function system_clean() {
 	else echo "未知的包管理器!"; return; fi
 }
 
-# 6. Docker管理 # <--- 完整功能已移植
+# 6. Docker管理
 function docker_management() {
     # --- Docker 模块所需的嵌套函数 ---
-    function docker_tato() { # 状态显示
+    function docker_tato() {
         local container_count=$(docker ps -a -q 2>/dev/null | wc -l)
         local image_count=$(docker images -q 2>/dev/null | wc -l)
         local network_count=$(docker network ls -q 2>/dev/null | wc -l)
@@ -138,9 +138,9 @@ function docker_management() {
             echo -e "${gl_lv}环境已经安装${gl_bai}  容器: ${gl_lv}$container_count${gl_bai}  镜像: ${gl_lv}$image_count${gl_bai}  网络: ${gl_lv}$network_count${gl_bai}  卷: ${gl_lv}$volume_count${gl_bai}"
         fi
     }
-    function install_add_docker() { # Docker安装
+    function install_add_docker() {
         echo -e "${gl_huang}正在安装docker环境...${gl_bai}"
-        if ! command -v docker &> /dev/null; then
+        if ! command -v docker &>/dev/null; then
             local country=$(curl -s ipinfo.io/country)
             if [ "$country" = "CN" ]; then
                 sh <(curl -sSL https://linuxmirrors.cn/docker.sh) --mirror Aliyun
@@ -151,10 +151,10 @@ function docker_management() {
         install docker-compose
         echo -e "${gl_lv}Docker 环境安装/更新完成！${gl_bai}"
     }
-    function docker_ps() { # 容器管理
+    function docker_ps() {
         while true; do
             clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
-            echo "容器操作"; echo "------------------------"; echo "1. 创建新的容器"; echo "------------------------"; echo "2. 启动指定容器             6. 启动所有容器"; echo "3. 停止指定容器             7. 停止所有容器"; echo "4. 删除指定容器             8. 删除所有容器"; echo "5. 重启指定容器             9. 重启所有容器"; echo "------------------------"; echo "11. 进入指定容器           12. 查看容器日志"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新的容器"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "2. 启动指定容器             6. 启动所有容器"; echo "3. 停止指定容器             7. 停止所有容器"; echo "4. 删除指定容器             8. 删除所有容器"; echo "5. 重启指定容器             9. 重启所有容器"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "11. 进入指定容器           12. 查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入创建命令: " dockername; $dockername ;;
@@ -173,9 +173,9 @@ function docker_management() {
             esac
         done
     }
-    function docker_image() { # 镜像管理
+    function docker_image() {
         while true; do
-            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo "------------------------"; echo "1. 获取指定镜像             3. 删除指定镜像"; echo "2. 更新指定镜像             4. 删除所有镜像"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像             3. 删除指定镜像"; echo "2. 更新指定镜像             4. 删除所有镜像"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
@@ -187,10 +187,10 @@ function docker_management() {
             esac
         done
     }
-    function docker_network() { # 网络管理
+    function docker_network() {
         while true; do
-            clear; echo "Docker网络列表"; echo "------------------------------------------------------------"; docker network ls; echo ""
-            echo "网络操作"; echo "------------------------"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            clear; echo "Docker网络列表"; echo -e "${gl_hong}------------------------------------------------------------${gl_bai}"; docker network ls; echo ""
+            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新网络名: " network; docker network create $network ;;
@@ -202,9 +202,9 @@ function docker_management() {
             esac
         done
     }
-    function docker_volume() { # 卷管理
+    function docker_volume() {
         while true; do
-            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo "------------------------"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
@@ -221,7 +221,7 @@ function docker_management() {
       clear
       echo -e "Docker管理"
       docker_tato
-      echo -e "${gl_kjlan}------------------------"
+      echo -e "${gl_hong}------------------------${gl_bai}"
       echo -e "${gl_kjlan}1.   ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"
       echo -e "${gl_kjlan}2.   ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"
       echo -e "${gl_kjlan}3.   ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"
@@ -231,9 +231,9 @@ function docker_management() {
       echo -e "${gl_kjlan}7.   ${gl_bai}清理无用的Docker数据"
       echo -e "${gl_kjlan}8.   ${gl_bai}更换Docker源"
       echo -e "${gl_kjlan}20.  ${gl_bai}卸载Docker环境"
-      echo -e "${gl_kjlan}------------------------"
+      echo -e "${gl_hong}------------------------${gl_bai}"
       echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
-      echo -e "${gl_kjlan}------------------------${gl_bai}"
+      echo -e "${gl_hong}------------------------${gl_bai}"
       read -p "请输入你的选择: " sub_choice
       case $sub_choice in
         1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -242,7 +242,16 @@ function docker_management() {
         4) docker_image ;;
         5) docker_network ;;
         6) docker_volume ;;
-        7) clear; docker system prune -af --volumes; press_any_key_to_continue ;;
+        7) 
+          clear
+          read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice
+          if [[ "${choice,,}" == "y" ]]; then
+            docker system prune -af --volumes
+          else
+            echo "已取消"
+          fi
+          press_any_key_to_continue
+          ;;
         8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
         20) 
           clear
@@ -352,11 +361,10 @@ function uninstall_script() {
   if [[ "${confirm,,}" != "y" ]]; then echo -e "\n${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue; return; fi
   
   echo -e "\n${gl_lan}正在移除快捷命令: ${shortcut_path}...${gl_bai}"; rm -f "${shortcut_path}"
-  echo -e "${gl_lan}正在移除源文件副本: ${root_copy_path}...${gl_bai}"; rm -f "${root_copy_path}"
+  echo -e "\n${gl_lan}正在移除源文件副本: ${root_copy_path}...${gl_bai}"; rm -f "${root_copy_path}"
   
   echo -e "\n${gl_lv}✅ 卸载完成！${gl_bai}"
-  echo -e "所有相关文件已被移除。"
-  echo -e "脚本即将退出。"; sleep 1; exit 0 # <--- 修改此处
+  echo -e "所有相关文件已被移除。"; echo -e "脚本即将退出。"; sleep 1; exit 0
 }
 
 # --- 主菜单显示 ---
@@ -371,16 +379,16 @@ function main_menu() {
   echo -e "   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
   echo -e "${gl_bai}"
   echo -e "${gl_lan}               AYANG's Toolbox v${SCRIPT_VERSION}               ${gl_bai}"
-  echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
+  echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
   echo -e "${gl_kjlan}1.  ${gl_bai}系统信息查询"
   echo -e "${gl_kjlan}2.  ${gl_bai}系统更新"
   echo -e "${gl_kjlan}3.  ${gl_bai}系统清理"
   echo -e "${gl_kjlan}6.  ${gl_bai}Docker管理"
-  echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
+  echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
   echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
   echo -e "${gl_kjlan}000.${gl_bai}卸载脚本"
   echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
-  echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
+  echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
   read -p "请输入你的选择: " choice
 }
 
