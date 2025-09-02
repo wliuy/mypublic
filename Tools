@@ -1,281 +1,304 @@
 #!/usr/bin/env bash
 
 #
-# 多功能脚本工具箱框架 (灵感来源: kejilion.sh)
+# AYANG's Toolbox v2.0 (基于 kejilion.sh 风格定制)
 #
 
-# 遇到任何错误则终止脚本 (在函数内部按需使用)
-# set -e
+# --- 颜色定义 (源于 kejilion.sh) ---
+gl_hui='\e[37m'
+gl_hong='\033[31m'
+gl_lv='\033[32m'
+gl_huang='\033[33m'
+gl_lan='\033[34m'
+gl_bai='\033[0m'
+gl_zi='\033[35m'
+gl_kjlan='\033[96m'
 
-# --- 颜色定义 ---
-# 使用 tput 动态获取颜色代码，兼容性更好
-if command -v tput >/dev/null 2&1 && [[ $(tput colors) -ge 8 ]]; then
-  C_RESET=$(tput sgr0)
-  C_RED=$(tput setaf 1)
-  C_GREEN=$(tput setaf 2)
-  C_YELLOW=$(tput setaf 3)
-  C_BLUE=$(tput setaf 4)
-  C_CYAN=$(tput setaf 6)
-else
-  # 如果 tput 不可用，则使用静态代码
-  C_RESET='\033[0m'
-  C_RED='\033[0;31m'
-  C_GREEN='\033[0;32m'
-  C_YELLOW='\033[0;33m'
-  C_BLUE='\033[0;34m'
-  C_CYAN='\033[0;36m'
-fi
 
-# --- 辅助函数 ---
+# --- 辅助函数 (源于 kejilion.sh) ---
 
-# 功能完成后暂停，等待用户按任意键继续
-function press_any_key_to_continue() {
-  echo -e "\n${C_YELLOW}按任意键返回主菜单...${C_RESET}"
-  # read a single character
-  read -n 1 -s -r
+# 操作完成后的暂停提示
+function break_end() {
+	  echo -e "${gl_lv}操作完成${gl_bai}"
+	  echo "按任意键继续..."
+	  read -n 1 -s -r -p ""
+	  echo ""
+	  clear
+}
+
+# 通用安装函数 (源于 kejilion.sh)
+install() {
+	if [ $# -eq 0 ]; then
+		echo "未提供软件包参数!"
+		return 1
+	fi
+
+	for package in "$@"; do
+		if ! command -v "$package" &>/dev/null; then
+			echo -e "${gl_huang}正在安装 $package...${gl_bai}"
+			if command -v dnf &>/dev/null; then
+				dnf install -y "$package"
+			elif command -v yum &>/dev/null; then
+				yum install -y "$package"
+			elif command -v apt &>/dev/null; then
+				apt update -y
+				apt install -y "$package"
+			elif command -v apk &>/dev/null; then
+				apk add "$package"
+			elif command -v pacman &>/dev/null; then
+				pacman -S --noconfirm "$package"
+			else
+				echo "未知的包管理器!"
+				return 1
+			fi
+		fi
+	done
 }
 
 # --- 功能函数定义 ---
-# 这里是每个菜单选项对应的具体功能实现
 
-# 1. 系统信息查询
-function show_system_info() {
-  clear
-  echo -e "${C_CYAN}======== 系统信息查询 ========${C_RESET}"
-  echo -e "主机名: ${C_GREEN}$(hostname)${C_RESET}"
-  echo -e "操作系统: ${C_GREEN}$(source /etc/os-release && echo $PRETTY_NAME)${C_RESET}"
-  echo -e "内核版本: ${C_GREEN}$(uname -r)${C_RESET}"
-  echo -e "CPU型号: ${C_GREEN}$(grep "model name" /proc/cpuinfo | head -n1 | cut -d: -f2)${C_RESET}"
-  echo -e "内存使用: ${C_GREEN}$(free -h | awk '/^Mem/ {print $3 "/" $2}')${C_RESET}"
-  echo -e "硬盘使用: ${C_GREEN}$(df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}') ${C_RESET}"
-  echo -e "公网IP: ${C_GREEN}$(curl -s ip.sb)${C_RESET}"
-  echo -e "${C_CYAN}===============================${C_RESET}"
-  press_any_key_to_continue
+# 1. 系统信息查询 (代码源于 kejilion.sh 的 linux_ps 函数)
+function system_info() {
+	clear
+	
+	# 获取IP地址
+	ipv4_address=$(curl -s https://ipinfo.io/ip)
+	ipv6_address=$(curl -s --max-time 1 https://v6.ipinfo.io/ip)
+
+	local cpu_info=$(lscpu | awk -F': +' '/Model name:/ {print $2; exit}')
+	local cpu_usage_percent=$(awk '{u=$2+$4; t=$2+$4+$5; if (NR==1){u1=u; t1=t;} else printf "%.0f\n", (($2+$4-u1) * 100 / (t-t1))}' \
+		<(grep 'cpu ' /proc/stat) <(sleep 1; grep 'cpu ' /proc/stat))
+	local cpu_cores=$(nproc)
+	local mem_info=$(free -b | awk 'NR==2{printf "%.2f/%.2fG (%.2f%%)", $3/1024/1024/1024, $2/1024/1024/1024, $3*100/$2}')
+	local disk_info=$(df -h | awk '$NF=="/"{printf "%s/%s (%s)", $3, $2, $5}')
+	local country=$(curl -s ipinfo.io/country)
+	local city=$(curl -s ipinfo.io/city)
+	local isp_info=$(curl -s ipinfo.io/org)
+	local load=$(uptime | awk '{print $(NF-2), $(NF-1), $NF}')
+	local cpu_arch=$(uname -m)
+	local hostname=$(uname -n)
+	local kernel_version=$(uname -r)
+	local os_info=$(grep PRETTY_NAME /etc/os-release | cut -d '=' -f2 | tr -d '"')
+	local runtime=$(cat /proc/uptime | awk -F. '{run_days=int($1 / 86400);run_hours=int(($1 % 86400) / 3600);run_minutes=int(($1 % 3600) / 60); if (run_days > 0) printf("%d天 ", run_days); if (run_hours > 0) printf("%d时 ", run_hours); printf("%d分\n", run_minutes)}')
+
+	echo ""
+	echo -e "系统信息查询"
+	echo -e "${gl_kjlan}-------------"
+	echo -e "${gl_kjlan}主机名:       ${gl_bai}$hostname"
+	echo -e "${gl_kjlan}系统版本:     ${gl_bai}$os_info"
+	echo -e "${gl_kjlan}Linux版本:    ${gl_bai}$kernel_version"
+	echo -e "${gl_kjlan}-------------"
+	echo -e "${gl_kjlan}CPU架构:      ${gl_bai}$cpu_arch"
+	echo -e "${gl_kjlan}CPU型号:      ${gl_bai}$cpu_info"
+	echo -e "${gl_kjlan}CPU核心数:    ${gl_bai}$cpu_cores"
+	echo -e "${gl_kjlan}-------------"
+	echo -e "${gl_kjlan}CPU占用:      ${gl_bai}$cpu_usage_percent%"
+	echo -e "${gl_kjlan}系统负载:     ${gl_bai}$load"
+	echo -e "${gl_kjlan}物理内存:     ${gl_bai}$mem_info"
+	echo -e "${gl_kjlan}硬盘占用:     ${gl_bai}$disk_info"
+	echo -e "${gl_kjlan}-------------"
+	if [ -n "$ipv4_address" ]; then
+		echo -e "${gl_kjlan}IPv4地址:     ${gl_bai}$ipv4_address"
+	fi
+	if [ -n "$ipv6_address" ]; then
+		echo -e "${gl_kjlan}IPv6地址:     ${gl_bai}$ipv6_address"
+	fi
+	echo -e "${gl_kjlan}运营商:       ${gl_bai}$isp_info"
+	echo -e "${gl_kjlan}地理位置:     ${gl_bai}$country $city"
+	echo -e "${gl_kjlan}-------------"
+	echo -e "${gl_kjlan}运行时长:     ${gl_bai}$runtime"
+	echo
 }
 
-# 2. 系统更新
-function update_system() {
-  clear
-  echo -e "${C_CYAN}======== 开始更新系统 ========${C_RESET}"
-  if command -v apt-get &>/dev/null; then
-    sudo apt-get update && sudo apt-get upgrade -y
-  elif command -v yum &>/dev/null;
-    then
-    sudo yum update -y
-  else
-    echo -e "${C_RED}未知的包管理器，无法自动更新。${C_RESET}"
-  fi
-  echo -e "${C_GREEN}系统更新完成！${C_RESET}"
-  press_any_key_to_continue
+# 2. 系统更新 (代码源于 kejilion.sh 的 linux_update 函数)
+function system_update() {
+	echo -e "${gl_huang}正在系统更新...${gl_bai}"
+	if command -v dnf &>/dev/null; then
+		dnf -y update
+	elif command -v yum &>/dev/null; then
+		yum -y update
+	elif command -v apt &>/dev/null; then
+		apt update -y && apt full-upgrade -y
+	elif command -v apk &>/dev/null; then
+		apk update && apk upgrade
+	elif command -v pacman &>/dev/null; then
+		pacman -Syu --noconfirm
+	else
+		echo "未知的包管理器!"
+		return
+	fi
 }
 
-# ... 其他占位符功能 ...
-function ldnmp_setup() {
-    echo -e "${C_YELLOW}功能正在开发中...${C_RESET}"
-    sleep 1
+# 3. 系统清理 (代码源于 kejilion.sh 的 linux_clean 函数)
+function system_clean() {
+	echo -e "${gl_huang}正在系统清理...${gl_bai}"
+	if command -v dnf &>/dev/null; then
+		dnf autoremove -y && dnf clean all && journalctl --rotate && journalctl --vacuum-time=1s
+	elif command -v yum &>/dev/null; then
+		yum autoremove -y && yum clean all && journalctl --rotate && journalctl --vacuum-time=1s
+	elif command -v apt &>/dev/null; then
+		apt autoremove --purge -y && apt clean -y && apt autoclean -y && journalctl --rotate && journalctl --vacuum-time=1s
+	elif command -v apk &>/dev/null; then
+		rm -rf /var/cache/apk/*
+	elif command -v pacman &>/dev/null; then
+		pacman -Rns $(pacman -Qdtq) --noconfirm && pacman -Scc --noconfirm && journalctl --rotate && journalctl --vacuum-time=1s
+	else
+		echo "未知的包管理器!"
+		return
+	fi
+	return
 }
 
-# 安装快捷指令的核心函数 (被自动安装和更新功能调用)
-function install_shortcut() {
-  # --- 配置 ---
-  local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
-  local install_name="tools"
-  local shortcut_name="y"
-  local install_path="/usr/local/bin/${install_name}"
-  local shortcut_path="/usr/local/bin/${shortcut_name}"
+# 6. Docker管理
 
-  # 在非自动安装时（从菜单选择）先清屏
-  if [[ "${auto_install}" != "true" ]]; then
-    clear
-  fi
-  
-  echo -e "${C_CYAN}开始安装/更新快捷方式 '${shortcut_name}'...${C_RESET}"
-
-  # 1. 检查 root 权限
-  if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "${C_RED}错误：此操作需要 root 权限才能写入 /usr/local/bin/${C_RESET}"
-    echo -e "${C_YELLOW}请尝试使用 'sudo' 运行此脚本。${C_RESET}"
-    press_any_key_to_continue
-    return 1 # 返回失败状态码
-  fi
-
-  # 2. 下载脚本到 /usr/local/bin
-  echo -e "${C_BLUE}正在从 GitHub 下载最新版脚本到 ${install_path}...${C_RESET}"
-  if curl -L "${script_url}" -o "${install_path}"; then
-    echo -e "${C_GREEN}下载成功！${C_RESET}"
-  else
-    echo -e "${C_RED}错误：下载脚本失败，请检查网络连接或URL。${C_RESET}"
-    press_any_key_to_continue
-    return 1 # 返回失败状态码
-  fi
-
-  # 3. 添加执行权限
-  echo -e "${C_BLUE}正在设置执行权限...${C_RESET}"
-  chmod +x "${install_path}"
-
-  # 4. 创建快捷方式的符号链接
-  echo -e "${C_BLUE}正在创建快捷命令 '${shortcut_name}' -> '${install_path}'...${C_RESET}"
-  ln -sf "${install_path}" "${shortcut_path}"
-
-  # 5. 提示成功信息
-  if [[ "${auto_install}" == "true" ]]; then
-    echo -e "\n${C_GREEN}🎉 恭喜！快捷方式安装成功！${C_RESET}"
-    echo -e "下次登录后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
-  else
-    echo -e "\n${C_GREEN}🎉 恭喜！操作成功！${C_RESET}"
-    echo -e "请重新打开一个新的终端窗口, 或执行 ${C_YELLOW}exec $SHELL${C_RESET} 来刷新环境。"
-    echo -e "之后, 你就可以在任何地方直接输入 '${C_YELLOW}${shortcut_name}${C_RESET}' 来运行此工具箱了。"
-    press_any_key_to_continue
-  fi
-  
-  return 0
+# Docker 安装函数 (源于 kejilion.sh 的 install_add_docker 函数)
+function docker_install_helper() {
+	echo -e "${gl_huang}正在安装docker环境...${gl_bai}"
+    if ! command -v docker &>/dev/null; then
+        curl -fsSL https://get.docker.com | sh
+    fi
+    # 设置国内镜像源
+    local country=$(curl -s ipinfo.io/country)
+    if [ "$country" = "CN" ]; then
+        mkdir -p /etc/docker
+        cat > /etc/docker/daemon.json << EOF
+{
+  "registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1panel.live", "https://docker.aliyuncs.com"]
+}
+EOF
+    fi
+    systemctl enable docker
+    systemctl restart docker
+    install docker-compose
+    echo -e "${gl_lv}Docker 环境安装/更新完成！${gl_bai}"
 }
 
-# 00. 脚本更新
-function update_script() {
-  clear
-  echo -e "${C_CYAN}正在检查并更新脚本...${C_RESET}"
-  # 脚本更新逻辑就是重新执行一次安装，用新脚本覆盖旧脚本
-  local auto_install="true" # <--- 修改此处为 true，更新后不再需要按键，直接返回主菜单
-  install_shortcut
-  sleep 2 # 短暂暂停2秒，让用户能看到更新成功的提示
-}
-
-# 000. 卸载脚本
-function uninstall_script() {
-  clear
-  echo -e "${C_CYAN}开始卸载脚本和快捷方式...${C_RESET}"
-  
-  local install_name="tools"
-  local shortcut_name="y"
-  local install_path="/usr/local/bin/${install_name}"
-  local shortcut_path="/usr/local/bin/${shortcut_name}"
-
-  # 1. 检查 root 权限
-  if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "${C_RED}错误：卸载过程需要 root 权限才能删除 /usr/local/bin/ 中的文件。${C_RESET}"
-    press_any_key_to_continue
-    return
-  fi
-
-  # 2. 检查脚本是否已安装
-  if [ ! -f "${install_path}" ] && [ ! -L "${shortcut_path}" ]; then
-      echo -e "${C_YELLOW}脚本未安装或文件不存在，无需卸载。${C_RESET}"
-      press_any_key_to_continue
-      return
-  fi
-
-  # 3. 危险操作，要求用户确认
-  echo -e "${C_RED}警告：这将从系统中永久删除脚本主体和 '${shortcut_name}' 快捷方式。${C_RESET}"
-  read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
-  if [[ "${confirm,,}" != "y" ]]; then
-      echo -e "\n${C_YELLOW}操作已取消。${C_RESET}"
-      press_any_key_to_continue
-      return
-  fi
-
-  # 4. 执行删除
-  echo -e "\n${C_BLUE}正在移除快捷方式: ${shortcut_path}...${C_RESET}"
-  rm -f "${shortcut_path}"
-  
-  echo -e "${C_BLUE}正在移除脚本主体: ${install_path}...${C_RESET}"
-  rm -f "${install_path}"
-
-  # 5. 提示成功并退出
-  echo -e "\n${C_GREEN}✅ 卸载完成！${C_RESET}"
-  echo -e "所有相关文件和快捷方式已被移除。"
-  echo -e "脚本即将退出。"
-  sleep 3
-  exit 0
-}
-
-# --- 主菜单显示 ---
-function main_menu() {
-  clear
-  # --- 这里是修改后的标题 ---
-  echo -e "${C_CYAN}                                                                    ${C_RESET}"
-  echo -e "${C_CYAN}    █████╗ ██╗   ██╗ █████╗ ███╗   ██╗ ██████╗                        ${C_RESET}"
-  echo -e "${C_CYAN}   ██╔══██╗╚██╗ ██╔╝██╔══██╗████╗  ██║██╔════╝                        ${C_RESET}"
-  echo -e "${C_CYAN}   ███████║ ╚████╔╝ ███████║██╔██╗ ██║██║  ███╗                       ${C_RESET}"
-  echo -e "${C_CYAN}   ██╔══██║  ╚██╔╝  ██╔══██║██║╚██╗██║██║   ██║                       ${C_RESET}"
-  echo -e "${C_CYAN}   ██║  ██║   ██║   ██║  ██║██║ ╚████║╚██████╔╝                       ${C_RESET}"
-  echo -e "${C_CYAN}   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝                        ${C_RESET}"
-  echo -e "${C_CYAN}                                                                    ${C_RESET}"
-  echo -e "${C_BLUE}               AYANG's Toolbox v1.0.0               ${C_RESET}"
-  echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询           ${C_GREEN}2.${C_RESET} 系统更新"
-  # ... 省略部分菜单项 ...
-  echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
-  echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}00.${C_RESET} 更新脚本              ${C_GREEN}000.${C_RESET} 卸载脚本"
-  echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
-  echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
-  read -p "请输入你的选择: " choice
-}
-
-# --- 主循环 ---
-function main_loop() {
+# Docker 容器管理 (源于 kejilion.sh 的 docker_ps 函数)
+function docker_container_menu() {
     while true; do
-      main_menu
-      case $choice in
-      1)
-        show_system_info
-        ;;
-      2)
-        update_system
-        ;;
-      # ... 省略部分 case ...
-      00)
-        update_script
-        ;;
-      000)
-        uninstall_script
-        ;;
-      0)
-        echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
-        exit 0
-        ;;
-      *)
-        echo -e "${C_RED}无效的输入，请输入菜单中存在的数字选项！${C_RESET}"
-        press_any_key_to_continue
-        ;;
-      esac
+        clear
+        echo "Docker容器列表"
+        docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+        echo ""
+        echo "容器操作"
+        echo "------------------------"
+        echo "1. 启动指定容器             2. 停止指定容器"
+        echo "3. 删除指定容器             4. 重启指定容器"
+        echo "5. 查看容器日志             6. 进入容器终端"
+        echo "------------------------"
+        echo "0. 返回Docker主菜单"
+        echo "------------------------"
+        read -p "请输入你的选择: " sub_choice
+        case $sub_choice in
+            1) read -p "请输入要启动的容器名或ID: " name; docker start $name ;;
+            2) read -p "请输入要停止的容器名或ID: " name; docker stop $name ;;
+            3) read -p "请输入要删除的容器名或ID: " name; docker rm -f $name ;;
+            4. restart_container) read -p "请输入要重启的容器名或ID: " name; docker restart $name ;;
+            5) read -p "请输入要查看日志的容器名或ID: " name; docker logs $name ;;
+            6) read -p "请输入要进入的容器名或ID: " name; docker exec -it $name /bin/sh ;;
+            0) break ;;
+            *) echo "无效输入" ;;
+        esac
+        echo -e "\n操作完成，按任意键继续..."
+        read -n 1 -s -r
+    done
+}
+
+# Docker 镜像管理 (源于 kejilion.sh 的 docker_image 函数)
+function docker_image_menu() {
+    while true; do
+        clear
+        echo "Docker镜像列表"
+        docker image ls
+        echo ""
+        echo "镜像操作"
+        echo "------------------------"
+        echo "1. 拉取指定镜像             2. 删除指定镜像"
+        echo "3. 清理无用镜像"
+        echo "------------------------"
+        echo "0. 返回Docker主菜单"
+        echo "------------------------"
+        read -p "请输入你的选择: " sub_choice
+        case $sub_choice in
+            1) read -p "请输入要拉取的镜像名 (例如: ubuntu:latest): " name; docker pull $name ;;
+            2) read -p "请输入要删除的镜像名或ID: " name; docker rmi -f $name ;;
+            3) docker image prune -af ;;
+            0) break ;;
+            *) echo "无效输入" ;;
+        esac
+        echo -e "\n操作完成，按任意键继续..."
+        read -n 1 -s -r
     done
 }
 
 
-# ===================================================================================
-# --- 脚本主入口逻辑 ---
-# ===================================================================================
+# Docker 管理主菜单
+function docker_management() {
+    while true; do
+        clear
+        echo "Docker 管理"
+        if command -v docker &> /dev/null; then
+            docker -v
+            docker compose version
+        else
+            echo -e "${gl_hui}Docker 未安装${gl_bai}"
+        fi
+        echo -e "${gl_kjlan}------------------------"
+        echo "1. 安装/更新 Docker 环境"
+        echo "2. 管理 Docker 容器"
+        echo "3. 管理 Docker 镜像"
+        echo "4. 查看 Docker 全局状态"
+        echo "5. 清理无用的Docker数据"
+        echo -e "${gl_kjlan}------------------------"
+        echo "0. 返回主菜单"
+        echo -e "${gl_kjlan}------------------------${gl_bai}"
+        read -p "请输入你的选择: " choice
 
-readonly INSTALL_PATH="/usr/local/bin/tools"
+        case $choice in
+            1) clear; docker_install_helper; break_end ;;
+            2) docker_container_menu ;;
+            3) docker_image_menu ;;
+            4) clear; docker system df; break_end ;;
+            5) clear; docker system prune -af --volumes; break_end ;;
+            0) break ;;
+            *) echo "无效输入" ;;
+        esac
+    done
+}
 
-# 判断脚本是否需要首次安装
-if [ ! -f "${INSTALL_PATH}" ]; then
-  # 如果 /usr/local/bin/tools 文件不存在, 则执行首次运行的自动安装逻辑
+
+# --- 主菜单显示 ---
+function main_menu() {
   clear
-  echo -e "${C_CYAN}欢迎使用工具箱, 检测到是首次运行。${C_RESET}"
-  echo -e "${C_YELLOW}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${C_RESET}"
-  echo -e "安装过程需要 sudo 权限, 如果当前不是root用户, 可能会提示您输入密码。"
-  echo -e "---------------------------------------------------------------------"
-  
-  # 设置一个标记，让安装函数知道这是自动安装
-  local auto_install="true"
-  
-  # 直接调用安装函数, 如果失败则直接进入菜单
-  if ! install_shortcut; then
-    echo -e "\n${C_RED}自动安装失败, 脚本将进入临时会话模式。${C_RESET}"
-    echo -e "${C_YELLOW}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${C_RESET}"
-    press_any_key_to_continue
-    main_loop 
-    exit 1
-  fi
-  
-  # 自动安装成功后，提示并继续进入主菜单
-  echo -e "\n${C_GREEN}安装流程执行完毕！快捷指令 'y' 已可用。${C_RESET}"
-  echo -e "${C_YELLOW}正在继续进入主菜单...${C_RESET}"
-  sleep 3
-fi
+  echo -e "${gl_kjlan}"
+  echo -e "    █████╗ ██╗   ██╗ █████╗ ███╗   ██╗ ██████╗"
+  echo -e "   ██╔══██╗╚██╗ ██╔╝██╔══██╗████╗  ██║██╔════╝"
+  echo -e "   ███████║ ╚████╔╝ ███████║██╔██╗ ██║██║  ███╗"
+  echo -e "   ██╔══██║  ╚██╔╝  ██╔══██║██║╚██╗██║██║   ██║"
+  echo -e "   ██║  ██║   ██║   ██║  ██║██║ ╚████║╚██████╔╝"
+  echo -e "   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
+  echo -e "${gl_bai}"
+  echo -e "${gl_lan}               AYANG's Toolbox v2.0               ${gl_bai}"
+  echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
+  echo -e "${gl_kjlan}1.  ${gl_bai}系统信息查询"
+  echo -e "${gl_kjlan}2.  ${gl_bai}系统更新"
+  echo -e "${gl_kjlan}3.  ${gl_bai}系统清理"
+  echo -e "${gl_kjlan}6.  ${gl_bai}Docker管理"
+  echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
+  echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
+  echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
+  read -p "请输入你的选择: " choice
+}
 
-# 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
-main_loop
+# --- 主循环 ---
+while true; do
+  main_menu
+  case $choice in
+    1) system_info; break_end ;;
+    2) clear; system_update; break_end ;;
+    3) clear; system_clean; break_end ;;
+    6) docker_management ;;
+    0) clear; exit ;;
+    *) echo -e "${gl_hong}无效的输入!${gl_bai}"; sleep 1 ;;
+  esac
+done
