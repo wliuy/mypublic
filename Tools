@@ -9,7 +9,7 @@
 
 # --- 颜色定义 ---
 # 使用 tput 动态获取颜色代码，兼容性更好
-if command -v tput >/dev/null 2>&1 && [[ $(tput colors) -ge 8 ]]; then
+if command -v tput >/dev/null 2&1 && [[ $(tput colors) -ge 8 ]]; then
   C_RESET=$(tput sgr0)
   C_RED=$(tput setaf 1)
   C_GREEN=$(tput setaf 2)
@@ -136,8 +136,9 @@ function update_script() {
   clear
   echo -e "${C_CYAN}正在检查并更新脚本...${C_RESET}"
   # 脚本更新逻辑就是重新执行一次安装，用新脚本覆盖旧脚本
-  local auto_install="false" # 设置为false，让它显示完整的成功提示和“按任意键继续”
+  local auto_install="true" # <--- 修改此处为 true，更新后不再需要按键，直接返回主菜单
   install_shortcut
+  sleep 2 # 短暂暂停2秒，让用户能看到更新成功的提示
 }
 
 # 000. 卸载脚本
@@ -244,7 +245,7 @@ function main_loop() {
 
 
 # ===================================================================================
-# --- 脚本主入口逻辑 --- # <--- 这是修改后的新逻辑
+# --- 脚本主入口逻辑 ---
 # ===================================================================================
 
 readonly INSTALL_PATH="/usr/local/bin/tools"
@@ -271,7 +272,7 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   fi
   
   # 自动安装成功后，提示并继续进入主菜单
-  echo -e "\n${C_GREEN}安装流程执行完毕！${C_RESET}"
+  echo -e "\n${C_GREEN}安装流程执行完毕！快捷指令 'y' 已可用。${C_RESET}"
   echo -e "${C_YELLOW}正在继续进入主菜单...${C_RESET}"
   sleep 3
 fi
