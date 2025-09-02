@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox (智能更新版)
+# AYANG's Toolbox v1.0.7 (最终版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.0.5" # <--- 新增版本号，每次更新功能时可以修改它
+readonly SCRIPT_VERSION="1.0.7"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -158,6 +158,8 @@ function install_shortcut() {
 
   echo -e "${gl_lan}正在设置执行权限...${gl_bai}"; chmod +x "${install_path}"
   echo -e "${gl_lan}正在创建快捷命令 (符号链接)...${gl_bai}"; ln -sf "${install_path}" "${shortcut_path}"
+  
+  # 清理旧版本可能残留的 alias
   sed -i "/^alias ${shortcut_name}=/d" "/root/.bashrc" > /dev/null 2>&1
   
   echo -e "\n${gl_lv}🎉 恭喜！操作成功！${gl_bai}"
@@ -170,35 +172,37 @@ function install_shortcut() {
   return 0
 }
 
-# 00. 脚本更新 (逻辑已重写)
+# 00. 脚本更新
 function update_script() {
   clear
   echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
   
-  # 从远程脚本中提取版本号
   local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | cut -d'"' -f2)
 
   if [ -z "$remote_version" ]; then
     echo -e "${gl_hong}获取远程版本失败，请检查网络或链接。${gl_bai}"
-    press_any_key_to_continue
-    return
+    press_any_key_to_continue; return
   fi
 
   echo -e "当前版本: ${gl_huang}v${SCRIPT_VERSION}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
   if [ "$SCRIPT_VERSION" = "$remote_version" ]; then
     echo -e "\n${gl_lv}已经是最新版本，无需更新！${gl_bai}"
+    press_any_key_to_continue
   else
     echo -e "\n${gl_huang}发现新版本，是否立即更新？${gl_bai}"
     read -p "(y/N): " confirm
     if [[ "${confirm,,}" == "y" ]]; then
-      local auto_install="false" # 设为false，让安装函数显示完整提示和暂停
-      install_shortcut
+      local auto_install="true"
+      if install_shortcut; then
+        echo -e "${gl_lv}更新完成，正在重新加载脚本...${gl_bai}"
+        sleep 2
+        exec "/usr/local/bin/tools"
+      fi
     else
-      echo -e "${gl_yellow}操作已取消。${gl_bai}"
+      echo -e "${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue
     fi
   fi
-  press_any_key_to_continue
 }
 
 # 000. 卸载脚本
@@ -282,11 +286,10 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   echo -e "${gl_huang}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${gl_bai}"
   echo -e "---------------------------------------------------------------------"
   
-  local auto_install="true"
+  auto_install="true"
   
   if ! install_shortcut; then
     echo -e "\n${gl_hong}自动安装失败, 脚本将进入临时会话模式。${gl_bai}"
-    echo -e "${gl_huang}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${gl_bai}"
     press_any_key_to_continue
     main_loop 
     exit 1
