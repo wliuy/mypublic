@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.6 (新增FileBrowser应用)
+# AYANG's Toolbox v1.3.7 (修复FileBrowser默认密码获取)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.6"
+readonly SCRIPT_VERSION="1.3.7"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -330,22 +330,40 @@ function app_management() {
           -p 5566:80 \
           filebrowser/filebrowser
 
-        sleep 5
+        echo -e "${gl_lan}等待容器启动并生成日志...${gl_bai}"
+        local timeout=20
+        local start_time=$(date +%s)
+        local log_output=""
+        local password=""
+        # 循环检查日志，直到找到密码或超时
+        while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
+            log_output=$(docker logs filebrowser 2>&1 | grep "User 'admin' initialized")
+            if [ -n "$log_output" ]; then
+                password=$(echo "$log_output" | awk '{print $NF}' | tr -d '\r')
+                break
+            fi
+            sleep 1
+        done
+
         if docker ps -q -f name=^filebrowser$; then
             local public_ip=$(curl -s https://ipinfo.io/ip)
-            local log_output=$(docker logs filebrowser 2>&1 | tail -n 10)
-            local username="admin"
-            local password="admin"
             local access_url="http://${public_ip}:5566"
+            local username="admin"
 
             echo -e "\n${gl_lv}FileBrowser 安装成功！${gl_bai}"
             echo -e "-----------------------------------"
             echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
             echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
-            echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            
+            if [ -n "$password" ]; then
+                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            else
+                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
+                echo -e "你可以运行 ${gl_lv}docker logs filebrowser${gl_bai} 手动查看。"
+            fi
             echo -e "-----------------------------------"
             echo -e "\n${gl_hui}容器最新日志（最后几行）: ${gl_bai}"
-            echo "${log_output}"
+            docker logs --tail 10 filebrowser 2>&1
         else
             echo -e "${gl_hong}FileBrowser 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
