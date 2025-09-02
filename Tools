@@ -59,7 +59,8 @@ function update_system() {
   echo -e "${C_CYAN}======== 开始更新系统 ========${C_RESET}"
   if command -v apt-get &>/dev/null; then
     sudo apt-get update && sudo apt-get upgrade -y
-  elif command -v yum &>/dev/null; then
+  elif command -v yum &>/dev/null;
+    then
     sudo yum update -y
   else
     echo -e "${C_RED}未知的包管理器，无法自动更新。${C_RESET}"
@@ -140,18 +141,24 @@ function update_script() {
 # --- 主菜单显示 ---
 function main_menu() {
   clear
-  echo -e "${C_CYAN}█▀▀ █░█ █▀▀ █ █░█ █▄▄ █▀▀ ░░ █▀ █░█${C_RESET}"
-  echo -e "${C_CYAN}█▄▄ █▄█ ██▄ █ █▄█ █▄█ ██▄ ▄▄ ▄█ █▀█${C_RESET}"
-  echo -e "${C_BLUE}      科技lion脚本工具箱 v1.0.0      ${C_RESET}"
-  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询      ${C_GREEN}2.${C_RESET} 系统更新"
+  # --- 这里是修改后的标题 ---
+  echo -e "${C_CYAN}                                                                    ${C_RESET}"
+  echo -e "${C_CYAN}    █████╗ ██╗   ██╗ █████╗ ███╗   ██╗ ██████╗                        ${C_RESET}"
+  echo -e "${C_CYAN}   ██╔══██╗╚██╗ ██╔╝██╔══██╗████╗  ██║██╔════╝                        ${C_RESET}"
+  echo -e "${C_CYAN}   ███████║ ╚████╔╝ ███████║██╔██╗ ██║██║  ███╗                       ${C_RESET}"
+  echo -e "${C_CYAN}   ██╔══██║  ╚██╔╝  ██╔══██║██║╚██╗██║██║   ██║                       ${C_RESET}"
+  echo -e "${C_CYAN}   ██║  ██║   ██║   ██║  ██║██║ ╚████║╚██████╔╝                       ${C_RESET}"
+  echo -e "${C_CYAN}   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝                        ${C_RESET}"
+  echo -e "${C_CYAN}                                                                    ${C_RESET}"
+  echo -e "${C_BLUE}               AYANG's Toolbox v1.0.0               ${C_RESET}"
+  echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
+  echo -e " ${C_GREEN}1.${C_RESET} 系统信息查询           ${C_GREEN}2.${C_RESET} 系统更新"
   # ... 省略部分菜单项 ...
   echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
-  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
-  echo -e " ${C_GREEN}99.${C_RESET} (重新)安装快捷指令"
-  echo -e " ${C_GREEN}00.${C_RESET} 更新脚本"
+  echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
+  echo -e " ${C_GREEN}99.${C_RESET} (重新)安装快捷指令    ${C_GREEN}00.${C_RESET} 更新脚本"
   echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
-  echo -e "${C_YELLOW}----------------------------------------${C_RESET}"
+  echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
   read -p "请输入你的选择: " choice
 }
 
@@ -205,22 +212,4 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   # 设置一个标记，让安装函数知道这是自动安装
   local auto_install="true"
   
-  # 直接调用安装函数, 并检查其是否成功
-  if install_shortcut; then
-    # 如果安装成功
-    echo -e "\n${C_GREEN}安装流程执行完毕, 请按指示操作以使用快捷指令。${C_RESET}"
-  else
-    # 如果安装失败 (例如, 用户没有sudo权限)
-    echo -e "\n${C_RED}安装失败, 脚本将进入临时会话模式。${C_RESET}"
-    echo -e "${C_YELLOW}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${C_RESET}"
-    press_any_key_to_continue
-    main_loop # 安装失败则直接进入菜单
-  fi
-  
-  # 自动安装成功后，脚本退出，提示用户使用新命令
-  exit 0
-
-else
-  # 如果 /usr/local/bin/tools 文件已存在, 则直接进入主菜单循环
-  main_loop
-fi
+  # 直接调用安装函数,
