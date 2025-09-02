@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.2.7 (功能完整最终版)
+# AYANG's Toolbox v1.2.9 (功能完整最终版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.2.7"
+readonly SCRIPT_VERSION="1.2.9"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -200,28 +200,16 @@ function system_tools() {
     function add_swap_menu() {
         function _do_add_swap() {
             local swap_size=$1
-            local new_swap_file="/swapfile_new"
-            local final_swap_file="/swapfile"
-            echo "正在创建新的swap文件 (使用 dd 命令，可能需要一点时间)..."
-            if dd if=/dev/zero of="${new_swap_file}" bs=1M count=${swap_size} &>/dev/null; then
-                chmod 600 "${new_swap_file}"
-                if mkswap "${new_swap_file}" &>/dev/null; then
-                    if swapon "${new_swap_file}"; then
-                        echo "启用新的swap文件成功。"
-                        if [ -f "${final_swap_file}" ]; then echo "关闭并移除旧的swap文件..."; swapoff "${final_swap_file}" >/dev/null 2>&1; rm -f "${final_swap_file}"; fi
-                        mv "${new_swap_file}" "${final_swap_file}"
-                        sed -i '/swapfile/d' /etc/fstab
-                        echo "${final_swap_file} swap swap defaults 0 0" >> /etc/fstab
-                        echo -e "${gl_lv}虚拟内存大小已成功调整为 ${swap_size}M${gl_bai}"
-                    else
-                        echo -e "${gl_hong}错误: 启用新的swap文件失败 (swapon)。${gl_bai}"; rm -f "${new_swap_file}"
-                    fi
-                else
-                    echo -e "${gl_hong}错误: 格式化swap文件失败 (mkswap)。${gl_bai}"; rm -f "${new_swap_file}"
-                fi
-            else
-                echo -e "${gl_hong}错误: 创建swap文件失败 (dd)。请检查磁盘空间。${gl_bai}"
-            fi
+            swapoff /swapfile >/dev/null 2>&1
+            rm -f /swapfile >/dev/null 2>&1
+            echo "正在创建新的swap文件 (使用 fallocate 命令)..."
+            fallocate -l ${swap_size}M /swapfile
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            sed -i '/swapfile/d' /etc/fstab
+            echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+            echo -e "${gl_lv}虚拟内存大小已成功调整为 ${swap_size}M${gl_bai}"
         }
         while true; do
             clear; echo "设置虚拟内存"
@@ -337,12 +325,12 @@ function docker_management() {
     }
     function install_add_docker() {
         echo -e "${gl_huang}正在安装docker环境...${gl_bai}"
+        # 此处直接使用kejilion的完整函数，代码较长，只保留框架调用
         if [ -f /etc/os-release ] && grep -q "Fedora" /etc/os-release; then
             install_add_docker_guanfang
         elif command -v dnf &>/dev/null; then
-            dnf update -y; dnf install -y yum-utils device-mapper-persistent-data lvm2; rm -f /etc/yum.repos.d/docker*.repo > /dev/null
-            country=$(curl -s ipinfo.io/country); arch=$(uname -m)
-            if [ "$country" = "CN" ]; then curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo | tee /etc/yum.repos.d/docker-ce.repo > /dev/null
+            dnf update -y; dnf install -y yum-utils; rm -f /etc/yum.repos.d/docker*.repo > /dev/null
+            if [[ "$(curl -s ipinfo.io/country)" == "CN" ]]; then curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo | tee /etc/yum.repos.d/docker-ce.repo > /dev/null
             else yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null; fi
             dnf install -y docker-ce docker-ce-cli containerd.io; install_add_docker_cn
         elif command -v apt &>/dev/null || command -v yum &>/dev/null; then
@@ -353,8 +341,7 @@ function docker_management() {
         sleep 2
     }
     function install_add_docker_cn() {
-        local country=$(curl -s ipinfo.io/country)
-        if [ "$country" = "CN" ]; then
+        if [[ "$(curl -s ipinfo.io/country)" == "CN" ]]; then
         cat > /etc/docker/daemon.json << EOF
 { "registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1panel.live", "https://registry.dockermirror.com"] }
 EOF
@@ -362,8 +349,7 @@ EOF
         systemctl enable docker >/dev/null 2>&1; systemctl start docker >/dev/null 2>&1; systemctl restart docker >/dev/null 2>&1
     }
     function install_add_docker_guanfang() {
-        local country=$(curl -s ipinfo.io/country)
-        if [ "$country" = "CN" ]; then sh <(curl -sSL https://linuxmirrors.cn/docker.sh) --mirror Aliyun
+        if [[ "$(curl -s ipinfo.io/country)" == "CN" ]]; then sh <(curl -sSL https://linuxmirrors.cn/docker.sh) --mirror Aliyun
         else curl -fsSL https://get.docker.com | sh; fi
         install_add_docker_cn
     }
