@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.2 (优化Lucky访问路径版)
+# AYANG's Toolbox v1.3.2 (功能修复版 - Lucky访问路径优化)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.2"
+readonly SCRIPT_VERSION="1.3.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -279,17 +279,17 @@ function app_management() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
         if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
         
-        # 增加对 Lucky 容器是否存在的判断
+        # 检查 Lucky 容器是否已存在
         if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
             local public_ip=$(curl -s https://ipinfo.io/ip)
             local config_file="/docker/goodluck/lucky.conf"
             local web_port="16601"
             local entry_path=""
 
-            # 从配置文件中读取实际的 web_port 和 entry_path
+            # 优化：使用更健壮的方式从配置文件中读取 web_port 和 entry_path
             if [ -f "$config_file" ]; then
-                web_port=$(grep "web_port" "$config_file" | awk -F'=' '{print $2}' | tr -d '[:space:]')
-                entry_path=$(grep "entry_path" "$config_file" | awk -F'=' '{print $2}' | tr -d '[:space:]' | sed 's/"//g')
+                web_port=$(grep -E '^\s*web_port' "$config_file" | awk -F'=' '{print $2}' | tr -d '[:space:]')
+                entry_path=$(grep -E '^\s*entry_path' "$config_file" | awk -F'=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '"')
             fi
             
             echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"
