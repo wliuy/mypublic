@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.0.4 (Root 目录安装版)
+# AYANG's Toolbox v1.0.4 (最终修正版)
 #
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -123,7 +123,6 @@ function system_clean() {
 
 # 6. Docker管理
 function docker_management() {
-    # 此处省略了详细的Docker管理代码，与上一版本相同
     echo -e "${gl_huang}Docker管理功能正在开发中...${gl_bai}"
     sleep 1
 }
@@ -133,14 +132,17 @@ function install_shortcut() {
   local script_url="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
   local install_name="tools"
   local shortcut_name="y"
-  local install_path="/root/${install_name}" # <--- 修改安装路径
-  local shell_config="/root/.bashrc" # <--- 定义shell配置文件
+  local install_path="/root/${install_name}"
+  local shell_config="/root/.bashrc"
 
+  if [[ "${auto_install}" != "true" ]]; then
+    clear
+  fi
   echo -e "${gl_kjlan}开始安装快捷方式 '${shortcut_name}'...${gl_bai}"
 
   if [[ "$(id -u)" -ne 0 ]]; then
     echo -e "${gl_hong}错误：此脚本设计为在 root 用户下安装和使用。${gl_bai}";
-    press_any_key_to_continue
+    if [[ "${auto_install}" != "true" ]]; then press_any_key_to_continue; fi
     return 1
   fi
 
@@ -153,11 +155,8 @@ function install_shortcut() {
 
   echo -e "${gl_lan}正在设置执行权限...${gl_bai}"; chmod +x "${install_path}"
   
-  # --- 创建快捷键的核心改动 ---
   echo -e "${gl_lan}正在创建快捷命令 (alias)...${gl_bai}"
-  # 先删除旧的别名，防止重复
   sed -i "/^alias ${shortcut_name}=/d" "${shell_config}"
-  # 添加新的别名
   echo "alias ${shortcut_name}='${install_path}'" >> "${shell_config}"
   
   echo -e "\n${gl_lv}🎉 恭喜！快捷方式安装成功！${gl_bai}"
@@ -184,8 +183,8 @@ function uninstall_script() {
   
   local install_name="tools"
   local shortcut_name="y"
-  local install_path="/root/${install_name}" # <--- 修改卸载路径
-  local shell_config="/root/.bashrc" # <--- 定义shell配置文件
+  local install_path="/root/${install_name}"
+  local shell_config="/root/.bashrc"
 
   if [[ "$(id -u)" -ne 0 ]]; then
     echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}"
@@ -207,7 +206,6 @@ function uninstall_script() {
       return
   fi
   
-  # --- 卸载快捷键的核心改动 ---
   echo -e "\n${gl_lan}正在移除快捷方式 (alias)...${gl_bai}"; sed -i "/^alias ${shortcut_name}=/d" "${shell_config}"
   echo -e "${gl_lan}正在移除脚本主体: ${install_path}...${gl_bai}"; rm -f "${install_path}"
 
@@ -238,7 +236,7 @@ function main_menu() {
   echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
   echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
   echo -e "${gl_kjlan}000.${gl_bai}卸载脚本"
-  echo -e "${gl_kjlan}0.  ${gl_ai}退出脚本"
+  echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
   echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
   read -p "请输入你的选择: " choice
 }
@@ -262,25 +260,32 @@ function main_loop() {
 
 
 # ===================================================================================
-# --- 脚本主入口逻辑 ---
+# --- 脚本主入口逻辑 --- # <--- 这是修改后的新逻辑
 # ===================================================================================
 
-readonly INSTALL_PATH="/root/tools" # <--- 修改安装路径检查
+readonly INSTALL_PATH="/root/tools"
 
 # 判断脚本是否已安装
 if [ ! -f "${INSTALL_PATH}" ]; then
-  # 首次运行，执行自动安装
+  # 如果 /root/tools 文件不存在, 则执行首次运行的自动安装逻辑
   clear
   echo -e "${gl_kjlan}欢迎使用 AYANG's Toolbox, 检测到是首次运行。${gl_bai}"
   echo -e "${gl_huang}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${gl_bai}"
   echo -e "---------------------------------------------------------------------"
   
-  local auto_install="true"
-  install_shortcut
+  auto_install="true" # <--- 去掉了错误的 `local` 关键字
+  
+  if ! install_shortcut; then
+    echo -e "\n${gl_hong}自动安装失败, 脚本将进入临时会话模式。${gl_bai}"
+    echo -e "${gl_huang}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${gl_bai}"
+    press_any_key_to_continue
+    main_loop 
+    exit 1
+  fi
   
   echo -e "\n${gl_lv}安装流程执行完毕！${gl_bai}"
   echo -e "${gl_huang}正在继续进入主菜单...${gl_bai}"
-  sleep 3
+  sleep 2
 fi
 
 # 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
