@@ -137,6 +137,53 @@ function update_script() {
   install_shortcut
 }
 
+# 000. 卸载脚本 # <--- 这是新增的整个卸载功能函数
+function uninstall_script() {
+  clear
+  echo -e "${C_CYAN}开始卸载脚本和快捷方式...${C_RESET}"
+  
+  local install_name="tools"
+  local shortcut_name="y"
+  local install_path="/usr/local/bin/${install_name}"
+  local shortcut_path="/usr/local/bin/${shortcut_name}"
+
+  # 1. 检查 root 权限
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo -e "${C_RED}错误：卸载过程需要 root 权限才能删除 /usr/local/bin/ 中的文件。${C_RESET}"
+    press_any_key_to_continue
+    return
+  fi
+
+  # 2. 检查脚本是否已安装
+  if [ ! -f "${install_path}" ] && [ ! -L "${shortcut_path}" ]; then
+      echo -e "${C_YELLOW}脚本未安装或文件不存在，无需卸载。${C_RESET}"
+      press_any_key_to_continue
+      return
+  fi
+
+  # 3. 危险操作，要求用户确认
+  echo -e "${C_RED}警告：这将从系统中永久删除脚本主体和 '${shortcut_name}' 快捷方式。${C_RESET}"
+  read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
+  if [[ "${confirm,,}" != "y" ]]; then
+      echo -e "\n${C_YELLOW}操作已取消。${C_RESET}"
+      press_any_key_to_continue
+      return
+  fi
+
+  # 4. 执行删除
+  echo -e "\n${C_BLUE}正在移除快捷方式: ${shortcut_path}...${C_RESET}"
+  rm -f "${shortcut_path}"
+  
+  echo -e "${C_BLUE}正在移除脚本主体: ${install_path}...${C_RESET}"
+  rm -f "${install_path}"
+
+  # 5. 提示成功并退出
+  echo -e "\n${C_GREEN}✅ 卸载完成！${C_RESET}"
+  echo -e "所有相关文件和快捷方式已被移除。"
+  echo -e "脚本即将退出。"
+  sleep 3
+  exit 0
+}
 
 # --- 主菜单显示 ---
 function main_menu() {
@@ -157,6 +204,7 @@ function main_menu() {
   echo -e " ${C_GREEN}15.${C_RESET} 广告专栏"
   echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
   echo -e " ${C_GREEN}99.${C_RESET} (重新)安装快捷指令    ${C_GREEN}00.${C_RESET} 更新脚本"
+  echo -e " ${C_GREEN}000.${C_RESET} 卸载脚本" # <--- 这里是新增的菜单项
   echo -e " ${C_GREEN}0.${C_RESET}  退出脚本"
   echo -e "${C_YELLOW}----------------------------------------------------${C_RESET}"
   read -p "请输入你的选择: " choice
@@ -181,6 +229,9 @@ function main_loop() {
       00)
         update_script
         ;;
+      000) # <--- 这里是新增的 case 分支
+        uninstall_script
+        ;;
       0)
         echo -e "${C_GREEN}感谢使用，再见！${C_RESET}"
         exit 0
@@ -195,7 +246,7 @@ function main_loop() {
 
 
 # ===================================================================================
-# --- 脚本主入口逻辑 --- # <--- 这是新增的核心判断逻辑
+# --- 脚本主入口逻辑 ---
 # ===================================================================================
 
 readonly INSTALL_PATH="/usr/local/bin/tools"
@@ -212,4 +263,22 @@ if [ ! -f "${INSTALL_PATH}" ]; then
   # 设置一个标记，让安装函数知道这是自动安装
   local auto_install="true"
   
-  # 直接调用安装函数,
+  # 直接调用安装函数, 并检查其是否成功
+  if install_shortcut; then
+    # 如果安装成功
+    echo -e "\n${C_GREEN}安装流程执行完毕, 请按指示操作以使用快捷指令。${C_RESET}"
+  else
+    # 如果安装失败 (例如, 用户没有sudo权限)
+    echo -e "\n${C_RED}安装失败, 脚本将进入临时会话模式。${C_RESET}"
+    echo -e "${C_YELLOW}您可以继续在本次会话中使用菜单, 但快捷指令 'y' 将不可用。${C_RESET}"
+    press_any_key_to_continue
+    main_loop # 安装失败则直接进入菜单
+  fi
+  
+  # 自动安装成功后，脚本退出，提示用户使用新命令
+  exit 0
+
+else
+  # 如果 /usr/local/bin/tools 文件已存在, 则直接进入主菜单循环
+  main_loop
+fi
