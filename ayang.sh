@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.21 (修复Memos远程备份容器和目录不存在的问题)
+# AYANG's Toolbox v1.3.22 (修复应用菜单刷新问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.21"
+readonly SCRIPT_VERSION="1.3.22"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -382,8 +382,7 @@ function app_management() {
                 echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
                 local public_ip=$(curl -s https://ipinfo.io/ip)
                 echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
-                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
-                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 return
             fi
@@ -401,8 +400,7 @@ function app_management() {
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
                 echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
-                echo -e "默认用户名: ${gl_lv}admin${gl_bai}"
-                echo -e "默认密码: ${gl_lv}admin${gl_bai}"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
             else
