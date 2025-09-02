@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.16 (修复Memos默认登录信息)
+# AYANG's Toolbox v1.3.17 (修复Memos备份路径配置)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.16"
+readonly SCRIPT_VERSION="1.3.17"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
