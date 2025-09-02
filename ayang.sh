@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.1.1 (最终版)
+# AYANG's Toolbox v1.1.2 (Docker功能完善版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.1.1"
+readonly SCRIPT_VERSION="1.1.2"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -125,16 +125,149 @@ function system_clean() {
 	else echo "未知的包管理器!"; return; fi
 }
 
-# 6. Docker管理
+# 6. Docker管理 # <--- 完整功能已移植
 function docker_management() {
-    echo -e "${gl_huang}Docker管理功能正在开发中...${gl_bai}"
-    sleep 1
+    # --- Docker 模块所需的嵌套函数 ---
+    function docker_tato() { # 状态显示
+        local container_count=$(docker ps -a -q 2>/dev/null | wc -l)
+        local image_count=$(docker images -q 2>/dev/null | wc -l)
+        local network_count=$(docker network ls -q 2>/dev/null | wc -l)
+        local volume_count=$(docker volume ls -q 2>/dev/null | wc -l)
+        if command -v docker &> /dev/null; then
+            echo -e "${gl_kjlan}------------------------"
+            echo -e "${gl_lv}环境已经安装${gl_bai}  容器: ${gl_lv}$container_count${gl_bai}  镜像: ${gl_lv}$image_count${gl_bai}  网络: ${gl_lv}$network_count${gl_bai}  卷: ${gl_lv}$volume_count${gl_bai}"
+        fi
+    }
+    function install_add_docker() { # Docker安装
+        echo -e "${gl_huang}正在安装docker环境...${gl_bai}"
+        if ! command -v docker &> /dev/null; then
+            local country=$(curl -s ipinfo.io/country)
+            if [ "$country" = "CN" ]; then
+                sh <(curl -sSL https://linuxmirrors.cn/docker.sh) --mirror Aliyun
+            else
+                curl -fsSL https://get.docker.com | sh
+            fi
+        fi
+        install docker-compose
+        echo -e "${gl_lv}Docker 环境安装/更新完成！${gl_bai}"
+    }
+    function docker_ps() { # 容器管理
+        while true; do
+            clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
+            echo "容器操作"; echo "------------------------"; echo "1. 创建新的容器"; echo "------------------------"; echo "2. 启动指定容器             6. 启动所有容器"; echo "3. 停止指定容器             7. 停止所有容器"; echo "4. 删除指定容器             8. 删除所有容器"; echo "5. 重启指定容器             9. 重启所有容器"; echo "------------------------"; echo "11. 进入指定容器           12. 查看容器日志"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "请输入创建命令: " dockername; $dockername ;;
+                2) read -p "请输入容器名: " dockername; docker start $dockername ;;
+                3) read -p "请输入容器名: " dockername; docker stop $dockername ;;
+                4) read -p "请输入容器名: " dockername; docker rm -f $dockername ;;
+                5) read -p "请输入容器名: " dockername; docker restart $dockername ;;
+                6) docker start $(docker ps -a -q) ;;
+                7) docker stop $(docker ps -q) ;;
+                8) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有容器吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker rm -f $(docker ps -a -q); fi ;;
+                9) docker restart $(docker ps -q) ;;
+                11) read -p "请输入容器名: " dockername; docker exec -it $dockername /bin/sh; press_any_key_to_continue ;;
+                12) read -p "请输入容器名: " dockername; docker logs $dockername; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function docker_image() { # 镜像管理
+        while true; do
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo "------------------------"; echo "1. 获取指定镜像             3. 删除指定镜像"; echo "2. 更新指定镜像             4. 删除所有镜像"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "请输入镜像名: " name; docker pull $name ;;
+                2) read -p "请输入镜像名: " name; docker pull $name ;;
+                3) read -p "请输入镜像名: " name; docker rmi -f $name ;;
+                4) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有镜像吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker rmi -f $(docker images -q); fi ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function docker_network() { # 网络管理
+        while true; do
+            clear; echo "Docker网络列表"; echo "------------------------------------------------------------"; docker network ls; echo ""
+            echo "网络操作"; echo "------------------------"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "设置新网络名: " network; docker network create $network ;;
+                2) read -p "加入网络名: " network; read -p "哪些容器加入该网络: " names; for name in $names; do docker network connect $network $name; done ;;
+                3) read -p "退出网络名: " network; read -p "哪些容器退出该网络: " names; for name in $names; do docker network disconnect $network $name; done ;;
+                4) read -p "请输入要删除的网络名: " network; docker network rm $network ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    function docker_volume() { # 卷管理
+        while true; do
+            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo "------------------------"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo "------------------------"; echo "0. 返回上一级选单"; echo "------------------------"
+            read -p "请输入你的选择: " sub_choice
+            case $sub_choice in
+                1) read -p "设置新卷名: " volume; docker volume create $volume ;;
+                2) read -p "输入删除卷名: " volume; docker volume rm $volume ;;
+                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker volume prune -f; fi ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+    
+    # Docker 管理主菜单
+    while true; do
+      clear
+      echo -e "Docker管理"
+      docker_tato
+      echo -e "${gl_kjlan}------------------------"
+      echo -e "${gl_kjlan}1.   ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"
+      echo -e "${gl_kjlan}2.   ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"
+      echo -e "${gl_kjlan}3.   ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"
+      echo -e "${gl_kjlan}4.   ${gl_bai}Docker镜像管理"
+      echo -e "${gl_kjlan}5.   ${gl_bai}Docker网络管理"
+      echo -e "${gl_kjlan}6.   ${gl_bai}Docker卷管理"
+      echo -e "${gl_kjlan}7.   ${gl_bai}清理无用的Docker数据"
+      echo -e "${gl_kjlan}8.   ${gl_bai}更换Docker源"
+      echo -e "${gl_kjlan}20.  ${gl_bai}卸载Docker环境"
+      echo -e "${gl_kjlan}------------------------"
+      echo -e "${gl_kjlan}0.   ${gl_bai}返回主菜单"
+      echo -e "${gl_kjlan}------------------------${gl_bai}"
+      read -p "请输入你的选择: " sub_choice
+      case $sub_choice in
+        1) clear; install_add_docker; press_any_key_to_continue ;;
+        2) clear; docker system df -v; press_any_key_to_continue ;;
+        3) docker_ps ;;
+        4) docker_image ;;
+        5) docker_network ;;
+        6) docker_volume ;;
+        7) clear; docker system prune -af --volumes; press_any_key_to_continue ;;
+        8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
+        20) 
+          clear
+          read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
+          case "$choice" in
+            [Yy])
+              docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
+              remove docker docker-compose docker-ce docker-ce-cli containerd.io
+              rm -f /etc/docker/daemon.json; hash -r
+              ;;
+            *) echo "已取消" ;;
+          esac
+          press_any_key_to_continue
+          ;;
+        0) break ;;
+        *) echo "无效输入"; sleep 1 ;;
+      esac
+    done
 }
+
 
 # (核心功能) 安装快捷指令
 function install_shortcut() {
-  local shortcut_name="y" # <--- 改回快捷键 y
-  local install_name="ayang" # 主程序名保持为ayang
+  local shortcut_name="y"
+  local install_name="ayang"
   local install_path_bin="/usr/local/bin/${shortcut_name}"
   local install_path_root="/root/${install_name}.sh"
 
@@ -195,7 +328,7 @@ function update_script() {
       if install_shortcut; then
         echo -e "${gl_lv}更新完成，正在重新加载脚本...${gl_bai}"
         sleep 2
-        exec "/usr/local/bin/y" # <--- 改回 y
+        exec "/usr/local/bin/y"
       fi
     else
       echo -e "${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue
@@ -208,7 +341,7 @@ function uninstall_script() {
   clear
   echo -e "${gl_kjlan}开始卸载脚本和快捷方式...${gl_bai}"
   
-  local shortcut_path="/usr/local/bin/y" # <--- 改回 y
+  local shortcut_path="/usr/local/bin/y"
   local root_copy_path="/root/ayang.sh"
 
   if [[ "$(id -u)" -ne 0 ]]; then echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}"; press_any_key_to_continue; return; fi
@@ -222,7 +355,8 @@ function uninstall_script() {
   echo -e "${gl_lan}正在移除源文件副本: ${root_copy_path}...${gl_bai}"; rm -f "${root_copy_path}"
   
   echo -e "\n${gl_lv}✅ 卸载完成！${gl_bai}"
-  echo -e "所有相关文件已被移除。"; echo -e "脚本即将退出。"; sleep 3; exit 0
+  echo -e "所有相关文件已被移除。"
+  echo -e "脚本即将退出。"; sleep 1; exit 0 # <--- 修改此处
 }
 
 # --- 主菜单显示 ---
@@ -258,7 +392,7 @@ function main_loop() {
         1) system_info; press_any_key_to_continue ;;
         2) clear; system_update; press_any_key_to_continue ;;
         3) clear; system_clean; press_any_key_to_continue ;;
-        6) docker_management; press_any_key_to_continue ;;
+        6) docker_management ;;
         00) update_script ;;
         000) uninstall_script ;;
         0) clear; exit 0 ;;
@@ -272,7 +406,7 @@ function main_loop() {
 # --- 脚本主入口逻辑 ---
 # ===================================================================================
 
-readonly INSTALL_PATH="/usr/local/bin/y" # <--- 改回 y
+readonly INSTALL_PATH="/usr/local/bin/y"
 
 # 判断脚本是否已安装
 if [ ! -f "${INSTALL_PATH}" ]; then
