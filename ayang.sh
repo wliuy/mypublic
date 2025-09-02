@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.0.8 (最终修正版)
+# AYANG's Toolbox v1.1.1 (最终版)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.0.8"
-readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/Tools"
+readonly SCRIPT_VERSION="1.1.1"
+readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
 gl_hui='\e[37m'
@@ -133,9 +133,10 @@ function docker_management() {
 
 # (核心功能) 安装快捷指令
 function install_shortcut() {
-  local shortcut_name="y"
+  local shortcut_name="y" # <--- 改回快捷键 y
+  local install_name="ayang" # 主程序名保持为ayang
   local install_path_bin="/usr/local/bin/${shortcut_name}"
-  local install_path_root="/root/tools" # <--- 遵照kejilion思路，增加root目录副本
+  local install_path_root="/root/${install_name}.sh"
 
   if [[ "${auto_install}" != "true" ]]; then
     clear
@@ -148,15 +149,15 @@ function install_shortcut() {
     return 1
   fi
 
-  echo -e "${gl_lan}正在从 GitHub 下载最新版脚本...${gl_bai}"
-  if curl -L "${SCRIPT_URL}" -o "${install_path_bin}"; then
+  echo -e "${gl_lan}正在从 GitHub 下载最新版脚本到 ${install_path_root}...${gl_bai}"
+  if curl -L "${SCRIPT_URL}" -o "${install_path_root}"; then
     echo -e "${gl_lv}下载成功！${gl_bai}"
   else
     echo -e "${gl_hong}错误：下载脚本失败。${gl_bai}"; return 1;
   fi
 
-  echo -e "${gl_lan}正在设置执行权限...${gl_bai}"; chmod +x "${install_path_bin}"
-  echo -e "${gl_lan}正在创建源文件副本到 ${install_path_root}...${gl_bai}"; cp -f "${install_path_bin}" "${install_path_root}"
+  echo -e "${gl_lan}正在设置执行权限...${gl_bai}"; chmod +x "${install_path_root}"
+  echo -e "${gl_lan}正在创建快捷命令 '${shortcut_name}' -> '${install_path_root}'...${gl_bai}"; ln -sf "${install_path_root}" "${install_path_bin}"
   
   echo -e "\n${gl_lv}🎉 恭喜！操作成功！${gl_bai}"
   
@@ -173,7 +174,6 @@ function update_script() {
   clear
   echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
   
-  # 使用-sL静默下载，通过grep和head确保只匹配到第一个版本号定义，cut精确提取
   local remote_script_content=$(curl -sL "${SCRIPT_URL}")
   local remote_version=$(echo "${remote_script_content}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
 
@@ -184,10 +184,9 @@ function update_script() {
 
   echo -e "当前版本: ${gl_huang}v${SCRIPT_VERSION}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
-  # 使用[[ ]]进行更安全的字符串比较
   if [[ "$SCRIPT_VERSION" == "$remote_version" ]]; then
     echo -e "\n${gl_lv}已是最新版，无需更新！${gl_bai}"
-    sleep 1 # <--- 按要求修改为暂停1秒
+    sleep 1
   else
     echo -e "\n${gl_huang}发现新版本，是否立即更新？${gl_bai}"
     read -p "(y/N): " confirm
@@ -196,7 +195,7 @@ function update_script() {
       if install_shortcut; then
         echo -e "${gl_lv}更新完成，正在重新加载脚本...${gl_bai}"
         sleep 2
-        exec "/usr/local/bin/y"
+        exec "/usr/local/bin/y" # <--- 改回 y
       fi
     else
       echo -e "${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue
@@ -209,8 +208,8 @@ function uninstall_script() {
   clear
   echo -e "${gl_kjlan}开始卸载脚本和快捷方式...${gl_bai}"
   
-  local shortcut_path="/usr/local/bin/y"
-  local root_copy_path="/root/tools"
+  local shortcut_path="/usr/local/bin/y" # <--- 改回 y
+  local root_copy_path="/root/ayang.sh"
 
   if [[ "$(id -u)" -ne 0 ]]; then echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}"; press_any_key_to_continue; return; fi
   if [ ! -f "${shortcut_path}" ] && [ ! -f "${root_copy_path}" ]; then echo -e "${gl_huang}脚本未安装或文件不存在，无需卸载。${gl_bai}"; press_any_key_to_continue; return; fi
@@ -246,7 +245,7 @@ function main_menu() {
   echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
   echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
   echo -e "${gl_kjlan}000.${gl_bai}卸载脚本"
-  echo -e "${gl_kjlan}0.  ${gl_ai}退出脚本"
+  echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
   echo -e "${gl_kjlan}----------------------------------------------------${gl_bai}"
   read -p "请输入你的选择: " choice
 }
@@ -273,7 +272,7 @@ function main_loop() {
 # --- 脚本主入口逻辑 ---
 # ===================================================================================
 
-readonly INSTALL_PATH="/usr/local/bin/y"
+readonly INSTALL_PATH="/usr/local/bin/y" # <--- 改回 y
 
 # 判断脚本是否已安装
 if [ ! -f "${INSTALL_PATH}" ]; then
