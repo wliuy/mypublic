@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.35 (修复菜单对齐和确认输入问题)
+# AYANG's Toolbox v1.4.0 (修复确认输入和菜单对齐问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.35"
+readonly SCRIPT_VERSION="1.4.0"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -526,8 +526,8 @@ EOF
             local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${server_to_delete}.sh"
             if [ -f "$sync_script_path" ]; then
                 echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
-                read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
-                if [[ "${confirm,,}" == "y" || "${confirm}" == "1" ]]; then
+                read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+                if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
                     # 删除定时任务
                     ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
                     # 删除脚本文件
