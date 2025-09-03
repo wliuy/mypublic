@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.99 (修复所有语法和格式问题)
+# AYANG's Toolbox v1.3.35 (修复菜单对齐和确认输入问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.99"
+readonly SCRIPT_VERSION="1.3.35"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -527,7 +527,7 @@ EOF
             if [ -f "$sync_script_path" ]; then
                 echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
                 read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
-                if [[ "${confirm,,}" == "y" ]]; then
+                if [[ "${confirm,,}" == "y" || "${confirm}" == "1" ]]; then
                     # 删除定时任务
                     ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
                     # 删除脚本文件
@@ -655,31 +655,36 @@ EOF
         
         echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
-        read -p "如确认继续，请输入 'y' : " confirm
-        if [[ "${confirm,,}" != "y" ]]; then echo -e "${gl_huang}操作已取消。${gl_bai}"; return; fi
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+            echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
+            docker stop filebrowser && docker rm filebrowser
 
-        echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
-        docker stop filebrowser && docker rm filebrowser
+            echo -e "${gl_lan}正在删除 filebrowser/filebrowser 镜像...${gl_bai}"
+            docker rmi filebrowser/filebrowser
 
-        echo -e "${gl_lan}正在删除 filebrowser/filebrowser 镜像...${gl_bai}"
-        docker rmi filebrowser/filebrowser
+            echo -e "${gl_lan}正在删除本地数据目录 /wliuy/filebrowser...${gl_bai}"
+            rm -rf /wliuy/filebrowser
 
-        echo -e "${gl_lan}正在删除本地数据目录 /wliuy/filebrowser...${gl_bai}"
-        rm -rf /wliuy/filebrowser
-
-        echo -e "${gl_lv}✅ FileBrowser 已被彻底卸载。${gl_bai}"
+            echo -e "${gl_lv}✅ FileBrowser 已被彻底卸载。${gl_bai}"
+        else
+            echo -e "${gl_huang}操作已取消。${gl_bai}"
+        fi
     }
 
     function uninstall_lucky() {
         clear; echo -e "${gl_kjlan}正在卸载 Lucky 反代...${gl_bai}"
         if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return; fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-        read -p "如确认继续，请输入 'y' : " confirm
-        if [[ "${confirm,,}" != "y" ]]; then echo -e "${gl_huang}操作已取消。${gl_bai}"; return; fi
-        echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
-        echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
-        echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
-        echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
+            echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
+            echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
+            echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
+            echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
+        else
+            echo -e "${gl_huang}操作已取消。${gl_bai}"
+        fi
     }
     
     function uninstall_memos() {
@@ -695,33 +700,35 @@ EOF
         echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
         echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
-        read -p "如确认继续，请输入 'y' : " confirm
-        if [[ "${confirm,,}" != "y" ]]; then echo -e "${gl_huang}操作已取消。${gl_bai}"; return; fi
-        
-        echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
-        docker stop memos && docker rm memos
-        
-        echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
-        docker rmi neosmemo/memos:latest
-        
-        echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
-        rm -rf ${MEMOS_DATA_DIR}
-        
-        echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
-        if [ -d "${SYNC_SCRIPT_BASE}" ]; then
-            for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
-                ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
-                rm -f "$script"
-            done
-            rmdir "${SYNC_SCRIPT_BASE}" >/dev/null 2>&1
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+            echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
+            docker stop memos && docker rm memos
+            
+            echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
+            docker rmi neosmemo/memos:latest
+            
+            echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
+            rm -rf ${MEMOS_DATA_DIR}
+            
+            echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
+            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
+                    ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
+                    rm -f "$script"
+                done
+                rmdir "${SYNC_SCRIPT_BASE}" >/dev/null 2>&1
+            fi
+            
+            echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
+            if [ -f "${LOG_FILE}" ]; then
+                rm -f "${LOG_FILE}"
+            fi
+            
+            echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
+        else
+            echo -e "${gl_huang}操作已取消。${gl_bai}"
         fi
-        
-        echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
-        if [ -f "${LOG_FILE}" ]; then
-            rm -f "${LOG_FILE}"
-        fi
-        
-        echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
     }
 
     while true; do
@@ -809,7 +816,7 @@ EOF
                 5) read -p "请输入容器名: " dockername; docker restart $dockername ;;
                 6) docker start $(docker ps -a -q) ;;
                 7) docker stop $(docker ps -q) ;;
-                8) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有容器吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker rm -f $(docker ps -a -q); fi ;;
+                8) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有容器吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker rm -f $(docker ps -a -q); fi ;;
                 9) docker restart $(docker ps -q) ;;
                 11) read -p "请输入容器名: " dockername; docker exec -it $dockername /bin/sh; press_any_key_to_continue ;;
                 12) read -p "请输入容器名: " dockername; docker logs $dockername; press_any_key_to_continue ;;
@@ -826,7 +833,7 @@ EOF
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
                 2) read -p "请输入镜像名: " name; docker pull $name ;;
                 3) read -p "请输入镜像名: " name; docker rmi -f $name ;;
-                4) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有镜像吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker rmi -f $(docker images -q); fi ;;
+                4) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有镜像吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker rmi -f $(docker images -q); fi ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -854,7 +861,7 @@ EOF
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
                 2) read -p "输入删除卷名: " volume; docker volume rm $volume ;;
-                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker volume prune -f; fi ;;
+                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker volume prune -f; fi ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -875,7 +882,7 @@ EOF
             6) docker_volume ;;
             7) 
               clear; read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice
-              if [[ "${choice,,}" == "y" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
+              if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
               press_any_key_to_continue
               ;;
             8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
@@ -883,7 +890,7 @@ EOF
               clear
               read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
               case "$choice" in
-                [Yy])
+                [Yy] | "1")
                   docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
                   remove docker docker-compose docker-ce docker-ce-cli containerd.io
                   rm -f /etc/docker/daemon.json; hash -r
@@ -958,7 +965,7 @@ function update_script() {
     else
         echo -e "\n${gl_huang}发现新版本，是否立即更新？${gl_bai}"
         read -p "(y/N): " confirm
-        if [[ "${confirm,,}" == "y" ]]; then
+        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
             local auto_install="true"
             if install_shortcut; then
                 echo -e "${gl_lv}更新完成，正在重新加载脚本...${gl_bai}"
@@ -983,14 +990,16 @@ function uninstall_script() {
     if [ ! -f "${shortcut_path}" ] && [ ! -f "${root_copy_path}" ]; then echo -e "${gl_huang}脚本未安装或文件不存在，无需卸载。${gl_bai}"; press_any_key_to_continue; return; fi
 
     echo -e "${gl_hong}警告：这将从系统中永久删除脚本 '${shortcut_path}' 和 '${root_copy_path}'。${gl_bai}"
-    read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
-    if [[ "${confirm,,}" != "y" ]]; then echo -e "\n${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue; return; fi
-    
-    echo -e "\n${gl_lan}正在移除快捷命令: ${shortcut_path}...${gl_bai}"; rm -f "${shortcut_path}"
-    echo -e "\n${gl_lan}正在移除源文件副本: ${root_copy_path}...${gl_bai}"; rm -f "${root_copy_path}"
-    
-    echo -e "\n${gl_lv}✅ 卸载完成！${gl_bai}"
-    echo -e "所有相关文件已被移除。"; echo -e "脚本即将退出。"; sleep 1; exit 0
+    read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+    if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+        echo -e "\n${gl_lan}正在移除快捷命令: ${shortcut_path}...${gl_bai}"; rm -f "${shortcut_path}"
+        echo -e "\n${gl_lan}正在移除源文件副本: ${root_copy_path}...${gl_bai}"; rm -f "${root_copy_path}"
+        
+        echo -e "\n${gl_lv}✅ 卸载完成！${gl_bai}"
+        echo -e "所有相关文件已被移除。"; echo -e "脚本即将退出。"; sleep 1; exit 0
+    else
+        echo -e "\n${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue; return
+    fi
 }
 
 # --- 主菜单显示 ---
