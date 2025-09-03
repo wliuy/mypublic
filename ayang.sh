@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.32 (修改卸载脚本编号为-0，上方分割线改为红色)
+# AYANG's Toolbox v1.3.33 (修复全部语法和格式问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.32"
+readonly SCRIPT_VERSION="1.3.33"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -32,8 +32,8 @@ install() {
     if [ $# -eq 0 ]; then
         echo "未提供软件包参数!"
         return 1
-    Ffi
-    
+    fi
+
     for package in "$@"; do
         if ! command -v "$package" &>/dev/null; then
             echo -e "${gl_huang}正在安装 $package...${gl_bai}"
@@ -301,7 +301,7 @@ function app_management() {
         
         sleep 3
         if docker ps -q -f name=^lucky$; then
-            echo -e "${gl_lv}Lucky 安装成功！${gl_bai}"
+            echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
             echo -e "Lucky 容器使用 ${gl_huang}--net=host${gl_bai} 模式，端口由配置文件 lucky.conf 决定。"
             echo -e "默认访问地址为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
         else
@@ -854,7 +854,7 @@ EOF
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
                 2) read -p "输入删除卷名: " volume; docker volume rm $volume ;;
-                3) read -p "$(echo -e "${gl_huang}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker volume prune -f; fi ;;
+                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" ]]; then docker volume prune -f; fi ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -1012,4 +1012,59 @@ function main_menu() {
     echo -e "${gl_kjlan}4.  ${gl_bai}系统工具"
     echo -e "${gl_kjlan}5.  ${gl_bai}应用管理"
     echo -e "${gl_kjlan}6.  ${gl_bai}Docker管理"
-    echo -e "${
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_hong}-0. ${gl_bai}卸载脚本"
+    echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    read -p "请输入你的选择: " choice
+}
+
+# --- 主循环 ---
+function main_loop() {
+    while true; do
+        main_menu
+        case $choice in
+            1) system_info; press_any_key_to_continue ;;
+            2) clear; system_update; press_any_key_to_continue ;;
+            3) clear; system_clean; press_any_key_to_continue ;;
+            4) system_tools ;;
+            5) app_management ;;
+            6) docker_management ;;
+            00) update_script ;;
+            -0) uninstall_script ;;
+            0) clear; exit 0 ;;
+            *) echo "无效输入"; sleep 1 ;;
+        esac
+    done
+}
+
+
+# ===================================================================================
+# --- 脚本主入口逻辑 ---
+# ===================================================================================
+
+readonly INSTALL_PATH="/usr/local/bin/y"
+
+# 判断脚本是否已安装
+if [ ! -f "${INSTALL_PATH}" ]; then
+    clear
+    echo -e "${gl_kjlan}欢迎使用 AYANG's Toolbox, 检测到是首次运行。${gl_bai}"
+    echo -e "${gl_huang}为了方便您未来使用, 脚本将自动为您安装 'y' 快捷指令。${gl_bai}"
+    echo -e "---------------------------------------------------------------------"
+    
+    auto_install="true"
+    
+    if ! install_shortcut; then
+        echo -e "\n${gl_hong}自动安装失败, 脚本将进入临时会话模式。${gl_bai}"
+        press_any_key_to_continue
+        main_loop 
+        exit 1
+    fi
+    
+    echo -e "\n${gl_lv}安装流程执行完毕！正在进入主菜单...${gl_bai}"
+fi
+
+# 无论是首次运行安装后, 还是之后直接运行, 最终都会执行主循环
+main_loop
