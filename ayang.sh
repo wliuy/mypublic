@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.28 (Memos备份功能彻底修复)
+# AYANG's Toolbox v1.3.29 (修复Memos备份目录嵌套问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.28"
+readonly SCRIPT_VERSION="1.3.29"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -415,11 +415,11 @@ function app_management() {
             read -p "请输入远程服务器SSH端口 (REMOTE_PORT): " remote_port
             read -p "请输入远程服务器用户名 (REMOTE_USER): " remote_user
             read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
-            read -p "请输入本地 Memos 数据目录 (LOCAL_DIR, 默认: /wliuy/memos): " local_dir
-            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos): " remote_dir
+            read -p "请输入本地 Memos 数据目录 (LOCAL_DIR, 默认: /wliuy/memos/): " local_dir
+            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos/): " remote_dir
             
-            local_dir=${local_dir:-"/wliuy/memos"}
-            remote_dir=${remote_dir:-"/wliuy/memos"}
+            local_dir=${local_dir:-"/wliuy/memos/"}
+            remote_dir=${remote_dir:-"/wliuy/memos/"}
             
             echo ""
 
