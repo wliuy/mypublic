@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.1 (增加菜单项目间距)
+# AYANG's Toolbox v1.4.2 (集成Watchtower安装与卸载)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.1"
+readonly SCRIPT_VERSION="1.4.2"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -277,6 +277,7 @@ function app_management() {
     local lucky_color=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
     local fb_color=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
     local memos_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
+    local wt_color=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
 
     function install_lucky() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
@@ -647,6 +648,82 @@ EOF
         done
     }
 
+    function install_watchtower() {
+        clear
+        echo -e "${gl_kjlan}正在安装 Watchtower...${gl_bai}"
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+        if docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; then
+            echo -e "\n${gl_huang}Watchtower 容器已存在，无需重复安装。${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_lan}正在拉取 Watchtower 镜像...${gl_bai}"
+        docker pull containrrr/watchtower
+
+        echo ""
+        echo -e "请选择更新频率："
+        echo "1) 每小时 (每 60 分钟)"
+        echo "2) 每天 (每天一次，默认)"
+        echo "3) 每周 (每周一次)"
+        echo "4) 每月 (每月一次)"
+        read -p "请输入您的选择 (1-4, 默认: 2): " freq_choice
+
+        case "$freq_choice" in
+            1) schedule="--interval 3600"; schedule_desc="每小时";;
+            3) schedule="--schedule \"0 0 * * 0\""; schedule_desc="每周";;
+            4) schedule="--schedule \"0 0 0 1 * *\""; schedule_desc="每月";;
+            *) schedule="--interval 86400"; schedule_desc="每天";;
+        esac
+
+        read -p "请输入您要 Watchtower 监控的镜像名称（多个镜像请用空格分隔，默认: all）：" images
+        if [ -z "$images" ]; then
+            images="--all"
+        fi
+
+        local watchtower_cmd="docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule $images"
+
+        echo -e "\n${gl_lan}正在运行 Watchtower 容器...${gl_bai}"
+        eval "$watchtower_cmd"
+
+        sleep 5
+        if docker ps -q -f name=^watchtower$; then
+            echo -e "\n${gl_lv}Watchtower 安装成功！${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "配置信息:"
+            echo -e "  容器名称:    ${gl_lv}watchtower${gl_bai}"
+            echo -e "  更新频率:    ${gl_lv}${schedule_desc}${gl_bai}"
+            echo -e "  监控镜像:    ${gl_lv}${images}${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "您可以随时使用 ${gl_lv}docker logs watchtower${gl_bai} 查看日志。"
+        else
+            echo -e "${gl_hong}Watchtower 容器启动失败，请检查 Docker 日志。${gl_bai}"
+        fi
+    }
+
+    function uninstall_watchtower() {
+        clear
+        echo -e "${gl_kjlan}正在卸载 Watchtower...${gl_bai}"
+        if ! docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; then
+            echo -e "${gl_huang}未找到 Watchtower 容器，无需卸载。${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_hong}警告：此操作将永久删除 Watchtower 容器和镜像！${gl_bai}"
+        read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+            echo -e "${gl_lan}正在停止并删除 watchtower 容器...${gl_bai}"
+            docker stop watchtower && docker rm watchtower
+
+            echo -e "${gl_lan}正在删除 watchtower 镜像...${gl_bai}"
+            docker rmi containrrr/watchtower
+
+            echo -e "${gl_lv}✅ Watchtower 已被彻底卸载。${gl_bai}"
+        else
+            echo -e "${gl_huang}操作已取消。${gl_bai}"
+        fi
+    }
+    
     function uninstall_filebrowser() {
         clear; echo -e "${gl_kjlan}正在卸载 FileBrowser...${gl_bai}"
         if ! docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
@@ -739,11 +816,13 @@ EOF
         echo -e "  ${lucky_color}1. Lucky 反代"
         echo -e "  ${fb_color}2. FileBrowser (文件管理)"
         echo -e "  ${memos_color}3. Memos (轻量笔记)"
+        echo -e "  ${wt_color}4. Watchtower (容器自动更新)"
         echo
         echo "卸载:"
         echo -e "  ${lucky_color}-1. 卸载 Lucky 反代"
         echo -e "  ${fb_color}-2. 卸载 FileBrowser"
         echo -e "  ${memos_color}-3. 卸载 Memos"
+        echo -e "  ${wt_color}-4. 卸载 Watchtower"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0. 返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -752,9 +831,11 @@ EOF
             1) install_lucky; press_any_key_to_continue ;;
             2) install_filebrowser; press_any_key_to_continue ;;
             3) memos_management ;;
+            4) install_watchtower; press_any_key_to_continue ;;
             -1) uninstall_lucky; app_management ;;
             -2) uninstall_filebrowser; app_management ;;
             -3) uninstall_memos; app_management ;;
+            -4) uninstall_watchtower; app_management ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
