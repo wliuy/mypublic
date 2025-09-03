@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.0 (修复确认输入和菜单对齐问题)
+# AYANG's Toolbox v1.4.1 (增加菜单项目间距)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.0"
+readonly SCRIPT_VERSION="1.4.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -1015,17 +1015,17 @@ function main_menu() {
     echo -e "${gl_bai}"
     echo -e "${gl_lan}              AYANG's Toolbox v${SCRIPT_VERSION}               ${gl_bai}"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_kjlan}1.  ${gl_bai}系统信息查询"
-    echo -e "${gl_kjlan}2.  ${gl_bai}系统更新"
-    echo -e "${gl_kjlan}3.  ${gl_bai}系统清理"
-    echo -e "${gl_kjlan}4.  ${gl_bai}系统工具"
-    echo -e "${gl_kjlan}5.  ${gl_bai}应用管理"
-    echo -e "${gl_kjlan}6.  ${gl_bai}Docker管理"
+    echo -e "${gl_kjlan}1.    ${gl_bai}系统信息查询"
+    echo -e "${gl_kjlan}2.    ${gl_bai}系统更新"
+    echo -e "${gl_kjlan}3.    ${gl_bai}系统清理"
+    echo -e "${gl_kjlan}4.    ${gl_bai}系统工具"
+    echo -e "${gl_kjlan}5.    ${gl_bai}应用管理"
+    echo -e "${gl_kjlan}6.    ${gl_bai}Docker管理"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
+    echo -e "${gl_kjlan}00.   ${gl_bai}更新脚本"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_kjlan}-0. ${gl_bai}卸载脚本"
-    echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
+    echo -e "${gl_kjlan}-0.   ${gl_bai}卸载脚本"
+    echo -e "${gl_kjlan}0.    ${gl_bai}退出脚本"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
     read -p "请输入你的选择: " choice
 }
