@@ -153,7 +153,7 @@ function system_clean() {
 
 # 4. 系统工具
 function system_tools() {
-    function restart_ssh() {
+	function restart_ssh() { 
         systemctl restart sshd >/dev/null 2>&1 || systemctl restart ssh >/dev/null 2>&1
     }
     function add_sshpasswd() {
