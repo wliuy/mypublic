@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.26 (Memos立即备份功能优化)
+# AYANG's Toolbox v1.3.27 (Memos立即备份功能优化)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.26"
+readonly SCRIPT_VERSION="1.3.27"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -556,7 +556,8 @@ EOF
             
             echo -e "${gl_lan}正在对所有已配置的远程服务器执行备份...${gl_bai}\n"
             
-            echo "$configured_scripts" | while read -r script_name; do
+            # 使用 for 循环替代 pipe，避免子 Shell 导致变量问题
+            for script_name in $configured_scripts; do
                 backup_count=$((backup_count + 1))
                 local server_address=$(echo "$script_name" | sed 's/sync_memos_//g;s/.sh//g')
                 echo -e "▶️  (${backup_count}/${total_backups}) 正在备份到服务器: ${gl_lv}${server_address}${gl_bai}"
