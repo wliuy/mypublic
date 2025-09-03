@@ -1015,7 +1015,7 @@ function main_menu() {
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
     echo -e "${gl_kjlan}00. ${gl_bai}更新脚本"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_hong}-0. ${gl_bai}卸载脚本"
+    echo -e "${gl_kjlan}-0. ${gl_bai}卸载脚本"
     echo -e "${gl_kjlan}0.  ${gl_bai}退出脚本"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
     read -p "请输入你的选择: " choice
