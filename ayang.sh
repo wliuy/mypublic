@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.33 (修复全部语法和格式问题)
+# AYANG's Toolbox v1.3.34 (修复所有语法和格式问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.33"
+readonly SCRIPT_VERSION="1.3.34"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -301,7 +301,7 @@ function app_management() {
         
         sleep 3
         if docker ps -q -f name=^lucky$; then
-            echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
+            echo -e "${gl_lv}Lucky 安装成功！${gl_bai}"
             echo -e "Lucky 容器使用 ${gl_huang}--net=host${gl_bai} 模式，端口由配置文件 lucky.conf 决定。"
             echo -e "默认访问地址为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
         else
