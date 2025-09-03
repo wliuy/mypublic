@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.34 (修复所有语法和格式问题)
+# AYANG's Toolbox v1.3.99 (修复所有语法和格式问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.34"
+readonly SCRIPT_VERSION="1.3.99"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
