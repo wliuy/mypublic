@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.3.27 (Memos立即备份功能优化)
+# AYANG's Toolbox v1.3.28 (Memos备份功能彻底修复)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.3.27"
+readonly SCRIPT_VERSION="1.3.28"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -464,12 +464,13 @@ function app_management() {
             cat > "${sync_script_path}" <<EOF
 #!/bin/bash
 
-# 参数从父脚本传递
-REMOTE_HOST=${remote_host}
-REMOTE_PORT=${remote_port}
-REMOTE_USER=${remote_user}
-LOCAL_DIR="${local_dir}"
-REMOTE_DIR="${remote_dir}"
+# 获取命令行参数
+REMOTE_HOST="\$1"
+REMOTE_PORT="\$2"
+REMOTE_USER="\$3"
+LOCAL_DIR="\$4"
+REMOTE_DIR="\$5"
+CONTAINER_NAME="memos"
 
 # 确保远程目录存在
 echo "正在检查并创建远程目录: \$REMOTE_DIR"
@@ -481,13 +482,13 @@ else
 fi
 
 # 检查远程 memos 容器是否存在且正在运行
-if ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker inspect --format '{{.State.Running}}' memos" &>/dev/null; then
+if ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker inspect --format '{{.State.Running}}' \$CONTAINER_NAME" &>/dev/null; then
     echo "停止远程 memos 容器..."
-    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker stop memos"
+    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker stop \$CONTAINER_NAME"
     echo "开始同步数据..."
     rsync -avz --checksum --delete -e "ssh -p \$REMOTE_PORT" "\$LOCAL_DIR" "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_DIR"
     echo "启动远程 memos 容器..."
-    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker start memos"
+    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker start \$CONTAINER_NAME"
 else
     echo "远程 memos 容器未运行或不存在，只同步数据..."
     rsync -avz --checksum --delete -e "ssh -p \$REMOTE_PORT" "\$LOCAL_DIR" "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_DIR"
@@ -496,7 +497,7 @@ EOF
             chmod +x "${sync_script_path}"
 
             # 添加定时任务
-            local cron_job="0 0 * * * ${sync_script_path} >> ${LOG_FILE} 2>&1"
+            local cron_job="0 0 * * * ${sync_script_path} ${remote_host} ${remote_port} ${remote_user} ${local_dir} ${remote_dir} >> ${LOG_FILE} 2>&1"
             echo -e "📅 添加定时任务（每天 0 点执行）..."
             ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ; echo "$cron_job" ) | crontab -
 
@@ -527,8 +528,10 @@ EOF
                 echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
                 read -p "你确定要继续吗？ (输入 'y' 确认, 其他任意键取消): " confirm
                 if [[ "${confirm,,}" == "y" ]]; then
+                    # 删除定时任务
+                    ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
+                    # 删除脚本文件
                     rm -f "${sync_script_path}"
-                    ( crontab -l 2>/dev/null | grep -v "$sync_script_path" ) | crontab -
                     echo -e "${gl_lv}✅ 备份配置已成功删除。${gl_bai}"
                 else
                     echo -e "${gl_huang}操作已取消。${gl_bai}"
@@ -556,14 +559,29 @@ EOF
             
             echo -e "${gl_lan}正在对所有已配置的远程服务器执行备份...${gl_bai}\n"
             
-            # 使用 for 循环替代 pipe，避免子 Shell 导致变量问题
             for script_name in $configured_scripts; do
-                backup_count=$((backup_count + 1))
+                local sync_script_path="${SYNC_SCRIPT_BASE}/${script_name}"
+                # 从脚本文件名中提取服务器地址
                 local server_address=$(echo "$script_name" | sed 's/sync_memos_//g;s/.sh//g')
+                
+                # 从 crontab 中查找对应的配置行来提取参数
+                local cron_line=$(crontab -l 2>/dev/null | grep "$sync_script_path")
+                local remote_host=$(echo "$cron_line" | awk '{print $7}')
+                local remote_port=$(echo "$cron_line" | awk '{print $8}')
+                local remote_user=$(echo "$cron_line" | awk '{print $9}')
+                local local_dir=$(echo "$cron_line" | awk '{print $10}')
+                local remote_dir=$(echo "$cron_line" | awk '{print $11}')
+
+                if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$local_dir" ] || [ -z "$remote_dir" ]; then
+                    echo -e "${gl_hong}错误：未能从定时任务中解析出完整的备份参数。请重新配置。${gl_bai}"
+                    continue
+                fi
+
+                backup_count=$((backup_count + 1))
                 echo -e "▶️  (${backup_count}/${total_backups}) 正在备份到服务器: ${gl_lv}${server_address}${gl_bai}"
                 
-                local sync_script_path="${SYNC_SCRIPT_BASE}/${script_name}"
-                bash "$sync_script_path"
+                # 显式传递参数给子脚本
+                bash "$sync_script_path" "$remote_host" "$remote_port" "$remote_user" "$local_dir" "$remote_dir"
                 
                 if [ $? -eq 0 ]; then
                     echo -e "✅ 备份任务执行完毕。\n"
