@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.10 (修复应用管理菜单颜色标记问题)
+# AYANG's Toolbox v1.4.11 (应用管理中卸载选项上方添加红线)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.10"
+readonly SCRIPT_VERSION="1.4.11"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -277,7 +277,7 @@ function app_management() {
     
     function get_app_color() {
         local container_name="$1"
-        if docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
+        if docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$" &>/dev/null; then
             echo -e "${gl_lv}"
         else
             echo -e "${gl_bai}"
@@ -843,11 +843,11 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装:"
-        echo -e "  ${lucky_color}1.    Lucky 反代"
-        echo -e "  ${fb_color}2.    FileBrowser (文件管理)"
-        echo -e "  ${memos_color}3.    Memos (轻量笔记)"
-        echo -e "  ${wt_color}4.    Watchtower (容器自动更新)"
-        echo
+        echo -e "  ${lucky_color}1.    ${gl_bai}Lucky 反代"
+        echo -e "  ${fb_color}2.    ${gl_bai}FileBrowser (文件管理)"
+        echo -e "  ${memos_color}3.    ${gl_bai}Memos (轻量笔记)"
+        echo -e "  ${wt_color}4.    ${gl_bai}Watchtower (容器自动更新)"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
         echo -e "  ${lucky_color}-1.   ${gl_bai}卸载 Lucky 反代"
         echo -e "  ${fb_color}-2.   ${gl_bai}卸载 FileBrowser"
