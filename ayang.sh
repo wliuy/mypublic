@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.9 (修复应用管理颜色标记问题)
+# AYANG's Toolbox v1.4.10 (修复应用管理菜单颜色标记问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.9"
+readonly SCRIPT_VERSION="1.4.10"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -274,24 +274,20 @@ function system_tools() {
 
 # 5. 应用管理
 function app_management() {
-    # 动态获取应用状态并设置颜色
-    local lucky_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; echo $?)
-    local fb_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; echo $?)
-    local memos_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$"; echo $?)
-    local wt_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; echo $?)
+    
+    function get_app_color() {
+        local container_name="$1"
+        if docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
+            echo -e "${gl_lv}"
+        else
+            echo -e "${gl_bai}"
+        fi
+    }
 
-    local lucky_color
-    if [ "$lucky_installed_flag" == "0" ]; then lucky_color="${gl_lv}"; else lucky_color="${gl_bai}"; fi
-    
-    local fb_color
-    if [ "$fb_installed_flag" == "0" ]; then fb_color="${gl_lv}"; else fb_color="${gl_bai}"; fi
-    
-    local memos_color
-    if [ "$memos_installed_flag" == "0" ]; then memos_color="${gl_lv}"; else memos_color="${gl_bai}"; fi
-    
-    local wt_color
-    if [ "$wt_installed_flag" == "0" ]; then wt_color="${gl_lv}"; else wt_color="${gl_bai}"; fi
-
+    local lucky_color=$(get_app_color "lucky")
+    local fb_color=$(get_app_color "filebrowser")
+    local memos_color=$(get_app_color "memos")
+    local wt_color=$(get_app_color "watchtower")
 
     function install_lucky() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
@@ -847,10 +843,10 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装:"
-        echo -e "  ${lucky_color}1.    ${gl_bai}Lucky 反代"
-        echo -e "  ${fb_color}2.    ${gl_bai}FileBrowser (文件管理)"
-        echo -e "  ${memos_color}3.    ${gl_bai}Memos (轻量笔记)"
-        echo -e "  ${wt_color}4.    ${gl_bai}Watchtower (容器自动更新)"
+        echo -e "  ${lucky_color}1.    Lucky 反代"
+        echo -e "  ${fb_color}2.    FileBrowser (文件管理)"
+        echo -e "  ${memos_color}3.    Memos (轻量笔记)"
+        echo -e "  ${wt_color}4.    Watchtower (容器自动更新)"
         echo
         echo "卸载:"
         echo -e "  ${lucky_color}-1.   ${gl_bai}卸载 Lucky 反代"
