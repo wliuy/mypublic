@@ -23,16 +23,14 @@ get_watchtower_info() {
     local current_interval="无"
 
     if is_watchtower_running; then
-        # 通过 docker ps 过滤出 Watchtower 正在监控的容器
-        monitored_images=$(docker ps -a --filter "label=com.centurylinklabs.watchtower.enable=true" --format "{{.Image}}" | tr '\n' ' ' | xargs)
-        
-        # 如果没有使用 label，则尝试从命令中获取
-        if [[ -z "$monitored_images" ]]; then
-             monitored_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | sed -E 's/.*--cleanup *//' | sed 's/[]"[],[]//g' | tr -d '[]' | tr ' ' '\n' | grep -v 'containrrr/watchtower\|--interval\|--cleanup' | tr '\n' ' ' | xargs)
-        fi
-        
-        # 获取更新频率
-        current_interval=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | grep -oP '(?<="--interval",")[0-9]+(?=")')
+        # 从容器命令中提取所有参数
+        local full_command=$(docker inspect --format '{{json .Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME)
+
+        # 找到 --interval 的值
+        current_interval=$(echo "$full_command" | grep -oP '(?<="--interval",")[0-9]+(?=")')
+
+        # 提取镜像名称，排除 Watchtower 镜像名和所有参数
+        monitored_images=$(echo "$full_command" | sed -E 's/\["watchtower"\]//g' | sed -E 's/\["containrrr\/watchtower"\]//g' | sed -E 's/"--interval","[^"]+"//g' | tr -d '",[]' | tr ' ' '\n' | grep -v '^\s*$' | tr '\n' ' ' | xargs)
     fi
 
     # 获取所有正在运行的容器镜像，排除 Watchtower 自身
@@ -41,10 +39,12 @@ get_watchtower_info() {
     # 从所有运行镜像中移除已监控的，得到未监控列表
     local unmonitored_images=""
     if [[ -n "$all_running_images" ]]; then
+        # 将已监控的镜像转换为数组
+        read -a monitored_array <<< "$monitored_images"
         for img in $all_running_images; do
             local is_monitored=false
             if [[ -n "$monitored_images" ]]; then
-                for m_img in $monitored_images; do
+                for m_img in "${monitored_array[@]}"; do
                     if [[ "$img" == "$m_img" ]]; then
                         is_monitored=true
                         break
