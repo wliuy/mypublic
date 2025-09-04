@@ -284,6 +284,43 @@ function app_management() {
         fi
     }
 
+    function watchtower_management() {
+        local wt_installed_flag=$(docker ps -a --filter "name=^watchtower$" --format "{{.Names}}" | grep -q 'watchtower' &>/dev/null)
+        local wt_installed_color
+        if [ "$wt_installed_flag" == "true" ]; then wt_installed_color="${gl_lv}"; else wt_installed_color="${gl_hong}"; fi
+        local wt_status="未安装"
+        if [ "$wt_installed_flag" == "true" ]; then wt_status="已安装"; fi
+        
+        while true; do
+            clear
+            echo -e "${gl_kjlan}Watchtower 管理${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo "安装状态:"
+            echo -e "  ${wt_installed_color}- ${wt_status}${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            
+            if [ "$wt_installed_flag" == "true" ]; then
+                echo -e "${gl_kjlan}1.    ${gl_bai}重新安装 Watchtower"
+                echo -e "${gl_kjlan}2.    ${gl_bai}添加监控镜像"
+                echo -e "${gl_kjlan}3.    ${gl_bai}删除监控镜像"
+            else
+                echo -e "${gl_kjlan}1.    ${gl_bai}安装 Watchtower"
+            fi
+            
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " wt_choice
+            case $wt_choice in
+                1) install_watchtower; press_any_key_to_continue ;;
+                2) add_watchtower_image; press_any_key_to_continue ;;
+                3) remove_watchtower_image; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+
     local lucky_color=$(get_app_color "lucky")
     local fb_color=$(get_app_color "filebrowser")
     local memos_color=$(get_app_color "memos")
@@ -302,6 +339,7 @@ function app_management() {
             echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
             echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
             echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
+            echo -e "重置后，你可以在首次登录时重新设置密码和端口。"
             return
         fi
 
@@ -853,10 +891,10 @@ EOF
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  -1.   卸载 $(get_app_color 'lucky')Lucky 反代${gl_bai}"
-        echo -e "  -2.   卸载 $(get_app_color 'filebrowser')FileBrowser${gl_bai}"
-        echo -e "  -3.   卸载 $(get_app_color 'memos')Memos${gl_bai}"
-        echo -e "  -4.   卸载 $(get_app_color 'watchtower')Watchtower${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')-1.   卸载 Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')-2.   卸载 FileBrowser${gl_bai}"
+        echo -e "  $(get_app_color 'memos')-3.   卸载 Memos${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')-4.   卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -865,37 +903,7 @@ EOF
             1) install_lucky; press_any_key_to_continue ;;
             2) install_filebrowser; press_any_key_to_continue ;;
             3) memos_management ;;
-            4)
-                while true; do
-                    clear
-                    local wt_installed_flag=$(docker ps -a --filter "name=^watchtower$" --format "{{.Names}}" | grep -q 'watchtower' &>/dev/null)
-                    local wt_installed_color
-                    if [ "$wt_installed_flag" == "true" ]; then wt_installed_color="${gl_lv}"; else wt_installed_color="${gl_bai}"; fi
-                    echo -e "Watchtower 管理"
-                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
-                    echo "安装状态:"
-                    if [ "$wt_installed_flag" == "true" ]; then
-                        echo -e "${wt_installed_color}  - 已安装${gl_bai}"
-                    else
-                        echo -e "${gl_hong}  - 未安装${gl_bai}"
-                    fi
-                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
-                    echo "1. 重新安装 Watchtower"
-                    echo "2. 添加监控镜像"
-                    echo "3. 删除监控镜像"
-                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
-                    echo "0. 返回上一级菜单"
-                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
-                    read -p "请输入你的选择: " wt_choice
-                    case $wt_choice in
-                        1) install_watchtower; press_any_key_to_continue ;;
-                        2) add_watchtower_image; press_any_key_to_continue ;;
-                        3) remove_watchtower_image; press_any_key_to_continue ;;
-                        0) break ;;
-                        *) echo "无效输入"; sleep 1 ;;
-                    esac
-                done
-                ;;
+            4) watchtower_management ;;
             -1) uninstall_lucky; app_management ;;
             -2) uninstall_filebrowser; app_management ;;
             -3) uninstall_memos; app_management ;;
@@ -1095,16 +1103,17 @@ function update_script() {
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
     local remote_version=$(curl -sL "${SCRIPT_URL}")
-    local remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local current_version="${SCRIPT_VERSION}"
 
     if [ -z "$remote_version" ]; then
         echo -e "${gl_hong}获取远程版本失败，请检查网络或链接。${gl_bai}"
         press_any_key_to_continue; return
     fi
 
-    echo -e "当前版本: ${gl_huang}v${SCRIPT_VERSION}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
+    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
-    if [[ "$SCRIPT_VERSION" == "$remote_version" ]]; then
+    if [[ "$current_version" == "$remote_version" ]]; then
         echo -e "\n${gl_lv}已是最新版，无需更新！${gl_bai}"
         sleep 1
     else
