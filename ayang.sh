@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.19 (添加Watchtower管理下级菜单)
+# AYANG's Toolbox v1.4.20 (修复Watchtower菜单和颜色问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.19"
+readonly SCRIPT_VERSION="1.4.20"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -312,17 +312,8 @@ function app_management() {
         sleep 3
         if docker ps -q -f name=^lucky$; then
             echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
-            echo -e "-----------------------------------"
-            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
-            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
-            
-            if [ -n "$password" ]; then
-                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
-            else
-                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
-                echo -e "你可以运行 ${gl_lv}docker logs lucky${gl_bai} 手动查看。"
-            fi
-            echo -e "-----------------------------------"
+            echo -e "Lucky 容器使用 ${gl_huang}--net=host${gl_bai} 模式，端口由配置文件 lucky.conf 决定。"
+            echo -e "默认访问地址为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
         else
             echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
@@ -420,7 +411,7 @@ function app_management() {
                 local public_ip=$(curl -s https://ipinfo.io/ip)
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
-                echo -e "访问地址: ${gl_lv}${public_ip}:5230${gl_bai}"
+                echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
                 echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
@@ -571,17 +562,19 @@ EOF
         
         function delete_memos_sync() {
             clear; echo -e "${gl_kjlan}删除 Memos 备份配置...${gl_bai}"
-            echo -e "----------------------------------------"
+
             local configured_servers=""
             if [ -d "${SYNC_SCRIPT_BASE}" ]; then
                 configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
             fi
 
             if [ -z "$configured_servers" ]; then
+                echo -e "----------------------------------------"
                 echo -e "${gl_huang}未找到任何已配置的远程备份服务器。${gl_bai}"
                 return
             fi
 
+            echo -e "----------------------------------------"
             echo -e "${gl_kjlan}已配置的远程服务器:${gl_bai}"
             echo "$configured_servers" | sed 's/^/  /'
             echo -e "----------------------------------------"
@@ -814,7 +807,7 @@ EOF
         
         echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
             echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
             docker stop filebrowser && docker rm filebrowser
@@ -837,7 +830,7 @@ EOF
             echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return;
         fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
             echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
             echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
@@ -872,7 +865,37 @@ EOF
             1) install_lucky; press_any_key_to_continue ;;
             2) install_filebrowser; press_any_key_to_continue ;;
             3) memos_management ;;
-            4) install_watchtower; press_any_key_to_continue ;;
+            4)
+                while true; do
+                    clear
+                    local wt_installed_flag=$(docker ps -a --filter "name=^watchtower$" --format "{{.Names}}" | grep -q 'watchtower' &>/dev/null)
+                    local wt_installed_color
+                    if [ "$wt_installed_flag" == "true" ]; then wt_installed_color="${gl_lv}"; else wt_installed_color="${gl_bai}"; fi
+                    echo -e "Watchtower 管理"
+                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                    echo "安装状态:"
+                    if [ "$wt_installed_flag" == "true" ]; then
+                        echo -e "${wt_installed_color}  - 已安装${gl_bai}"
+                    else
+                        echo -e "${gl_hong}  - 未安装${gl_bai}"
+                    fi
+                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                    echo "1. 重新安装 Watchtower"
+                    echo "2. 添加监控镜像"
+                    echo "3. 删除监控镜像"
+                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                    echo "0. 返回上一级菜单"
+                    echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                    read -p "请输入你的选择: " wt_choice
+                    case $wt_choice in
+                        1) install_watchtower; press_any_key_to_continue ;;
+                        2) add_watchtower_image; press_any_key_to_continue ;;
+                        3) remove_watchtower_image; press_any_key_to_continue ;;
+                        0) break ;;
+                        *) echo "无效输入"; sleep 1 ;;
+                    esac
+                done
+                ;;
             -1) uninstall_lucky; app_management ;;
             -2) uninstall_filebrowser; app_management ;;
             -3) uninstall_memos; app_management ;;
