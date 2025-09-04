@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# AYANG's Watchtower Management Toolbox (v2.1 - Patched)
+# AYANG's Watchtower Management Toolbox (Optimized Version 2.1)
 #
 
 # --- 颜色定义 ---
@@ -28,7 +28,7 @@ function is_watchtower_running() {
     docker ps --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"
 }
 
-# 核心函数：获取 Watchtower 的详细信息 (已修复解析逻辑)
+# 核心函数：获取 Watchtower 的详细信息
 function get_watchtower_info() {
     local monitored_containers=""
     local unmonitored_containers=""
@@ -45,19 +45,28 @@ function get_watchtower_info() {
     local cmd_json
     cmd_json=$(docker inspect --format '{{json .Config.Cmd}}' "$WATCHTOWER_CONTAINER_NAME")
     
-    # 将 JSON 数组字符串转换为 Bash 数组，这种方法更健壮
+    # 【修复点】将 JSON 数组字符串稳健地转换为 bash 数组
     local cmd_array=()
-    local temp_str=${cmd_json//[\"\[\]]/} # 移除引号和括号
-    IFS=',' read -r -a cmd_array <<< "$temp_str" # 按逗号分割
+    # 先移除首尾的 [], 然后将 "," 替换为换行符，再去掉每个参数的引号
+    if [[ "$cmd_json" != "null" && "$cmd_json" != "[]" ]]; then
+        local formatted_cmd
+        formatted_cmd=$(echo "$cmd_json" | sed 's/^\[//; s/\]$//; s/,/\n/g' | sed 's/"//g')
+        while IFS= read -r line; do
+            cmd_array+=("$line")
+        done <<< "$formatted_cmd"
+    fi
 
-    local i=0
-    while [[ $i -lt ${#cmd_array[@]} ]]; do
-        local arg="${cmd_array[$i]}"
+    local next_is_interval=false
+    for arg in "${cmd_array[@]}"; do
+        if [[ "$next_is_interval" == "true" ]]; then
+            current_interval="$arg"
+            next_is_interval=false
+            continue
+        fi
+
         case "$arg" in
             --interval)
-                # 跳过 --interval，取下一个元素作为其值
-                ((i++))
-                current_interval="${cmd_array[$i]}"
+                next_is_interval=true
                 ;;
             # 在此可以添加对其他参数的处理，如 --schedule, --cleanup 等
             *)
@@ -67,7 +76,6 @@ function get_watchtower_info() {
                 fi
                 ;;
         esac
-        ((i++))
     done
     # 去除末尾空格
     monitored_containers=$(echo "$monitored_containers" | xargs)
@@ -121,7 +129,7 @@ function apply_watchtower_config() {
     fi
 
     # 只有在明确指定了容器列表时才将其添加到命令中
-    if [[ "$containers_to_monitor" != "所有正在运行的应用" && -n "$containers_to_monitor" ]]; then
+    if [[ "$containers_to_monitor" != "所有正在运行的应用" ]]; then
          docker_run_cmd+=" $containers_to_monitor"
     fi
     
