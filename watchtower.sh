@@ -36,19 +36,30 @@ get_watchtower_info() {
     fi
 
     # 获取所有正在运行的容器镜像，排除 Watchtower 自身
-    all_running_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ')
+    all_running_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ' | xargs)
 
     # 从所有运行镜像中移除已监控的，得到未监控列表
-    unmonitored_images=$all_running_images
-    if [[ -n "$monitored_images" ]]; then
-        for m_img in $monitored_images; do
-            unmonitored_images=$(echo "$unmonitored_images" | sed "s/\b$m_img\b//g")
+    unmonitored_images=""
+    if [[ -n "$all_running_images" ]]; then
+        for img in $all_running_images; do
+            is_monitored=false
+            if [[ -n "$monitored_images" ]]; then
+                for m_img in $monitored_images; do
+                    if [[ "$img" == "$m_img" ]]; then
+                        is_monitored=true
+                        break
+                    fi
+                done
+            fi
+            if [[ "$is_monitored" == false ]]; then
+                unmonitored_images+="$img "
+            fi
         done
     fi
     
     # 返回值
     echo "$monitored_images"
-    echo "$unmonitored_images" | tr -s ' '
+    echo "$unmonitored_images"
     echo "$current_interval"
 }
 
@@ -102,6 +113,7 @@ main_menu() {
     clear
     echo "--- Watchtower 管理工具 ---"
     
+    # 获取所有信息
     read -a info_array <<< "$(get_watchtower_info)"
     MONITORED_IMAGES="${info_array[0]:-无}"
     UNMONITORED_IMAGES="${info_array[1]:-无}"
