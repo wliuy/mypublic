@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.16 (修复安装菜单颜色和文字)
+# AYANG's Toolbox v1.4.17 (修复更新检查逻辑)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.16"
+readonly SCRIPT_VERSION="1.4.17"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -844,16 +844,17 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装&管理:"
-        echo -e "  $(get_app_color 'lucky')1.    Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')2.    FileBrowser (文件管理)${gl_bai}"
-        echo -e "  $(get_app_color 'memos')3.    Memos (轻量笔记)${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')4.    Watchtower (容器自动更新)${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')1.${gl_bai}    Lucky 反代"
+        echo -e "  $(get_app_color 'filebrowser')2.${gl_bai}    FileBrowser (文件管理)"
+        echo -e "  $(get_app_color 'memos')3.${gl_bai}    Memos (轻量笔记)"
+        echo -e "  $(get_app_color 'watchtower')4.${gl_bai}    Watchtower (容器自动更新)"
+        echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  -1.   卸载 $(get_app_color 'lucky')Lucky 反代${gl_bai}"
-        echo -e "  -2.   卸载 $(get_app_color 'filebrowser')FileBrowser${gl_bai}"
-        echo -e "  -3.   卸载 $(get_app_color 'memos')Memos${gl_bai}"
-        echo -e "  -4.   卸载 $(get_app_color 'watchtower')Watchtower${gl_bai}"
+        echo -e "  -1.   $(get_app_color 'lucky')卸载 Lucky 反代${gl_bai}"
+        echo -e "  -2.   $(get_app_color 'filebrowser')卸载 FileBrowser${gl_bai}"
+        echo -e "  -3.   $(get_app_color 'memos')卸载 Memos${gl_bai}"
+        echo -e "  -4.   $(get_app_color 'watchtower')卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1062,7 +1063,7 @@ function update_script() {
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
     local remote_version=$(curl -sL "${SCRIPT_URL}")
-    local remote_version=$(echo "${remote_script_content}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
 
     if [ -z "$remote_version" ]; then
         echo -e "${gl_hong}获取远程版本失败，请检查网络或链接。${gl_bai}"
