@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# AYANG's Watchtower Management Toolbox (v2.4)
+# AYANG's Watchtower Management Toolbox (v2.5)
 #
 
 # --- 颜色定义 ---
@@ -28,7 +28,7 @@ function does_watchtower_exist() {
     docker ps -a --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"
 }
 
-# 【新增】将秒数格式化为易读的单位
+# 将秒数格式化为易读的单位
 function format_interval() {
     local seconds=$1
     if [[ ! "$seconds" =~ ^[0-9]+$ || "$seconds" -lt 1 ]]; then
@@ -92,7 +92,6 @@ function get_watchtower_info() {
     done
     monitored_containers=$(echo "$monitored_containers" | xargs)
 
-    # 【修改点】调用新函数格式化时间
     formatted_interval=$(format_interval "$current_interval_seconds")
 
     local all_running_containers
@@ -110,7 +109,6 @@ function get_watchtower_info() {
         unmonitored_containers=$(comm -23 <(echo "$sorted_all") <(echo "$sorted_monitored") | tr '\n' ' ' | xargs)
     fi
     
-    # 【修改点】返回原始秒数和格式化后的字符串
     echo "$monitored_containers;$unmonitored_containers;$current_interval_seconds;$formatted_interval;$is_monitoring_all"
 }
 
@@ -180,9 +178,8 @@ function uninstall_watchtower() {
 function main_menu() {
     while true; do
         clear
-        echo "--- Watchtower 管理工具 (v2.4) ---"
+        echo "--- Watchtower 管理工具 (v2.5) ---"
 
-        # 【修改点】读取5个返回值
         IFS=';' read -r MONITORED_IMAGES UNMONITORED_IMAGES CURRENT_INTERVAL_SECONDS FORMATTED_INTERVAL IS_MONITORING_ALL < <(get_watchtower_info)
 
         echo -e "\n${CYAN}Watchtower 状态：${NC}"
@@ -197,7 +194,6 @@ function main_menu() {
         echo -e "\n${CYAN}监控详情：${NC}"
         echo -e "  监控中   : ${CYAN}${MONITORED_IMAGES:-无}${NC}"
         echo -e "  未监控   : ${UNMONITORED_IMAGES:-无}"
-        # 【修改点】显示格式化后的时间
         echo -e "  更新频率 : ${FORMATTED_INTERVAL:-无}"
         echo "------------------------------------"
         
@@ -217,14 +213,49 @@ function main_menu() {
         read -p "请输入您的选择 (0-5): " choice
         
         case $choice in
-            1)
+            1) # 【修改点】安装流程使用新的频率设置方式
                 local running_containers
                 running_containers=$(docker ps --format "{{.Names}}" | grep -v "^$WATCHTOWER_CONTAINER_NAME$" | tr '\n' ' ')
                 echo -e "\n当前正在运行的应用有:\n  ${CYAN}${running_containers:-无}${NC}"
                 echo -e "${YELLOW}提示: 若要监控所有应用，请在此处直接按回车。${NC}"
                 read -p "请输入您要监控的应用名称 (多个用空格分隔): " images_to_install
-                read -p "请输入更新频率（秒，默认 86400）: " interval_seconds
-                interval_seconds=${interval_seconds:-86400}
+                
+                echo ""
+                echo "--- 设置监控频率 ---"
+                echo "请选择时间单位："
+                echo "  1. 小时"
+                echo "  2. 天 (默认)"
+                echo "  3. 周"
+                echo "  4. 月 (按30天计算)"
+                read -p "请输入您的选择 (1-4, 默认: 2): " unit_choice
+                unit_choice=${unit_choice:-2}
+
+                local multiplier=86400
+                local unit_name="天"
+
+                case $unit_choice in
+                    1) multiplier=3600; unit_name="小时" ;;
+                    2) multiplier=86400; unit_name="天" ;;
+                    3) multiplier=604800; unit_name="周" ;;
+                    4) multiplier=2592000; unit_name="月" ;;
+                    *) echo -e "\n${YELLOW}无效选择，已使用默认值 [天]。${NC}" ;;
+                esac
+                
+                local number=1
+                if [[ "$unit_name" == "天" ]]; then
+                    read -p "请输入具体的 ${unit_name} 数 (默认: 1): " number_input
+                    number=${number_input:-1}
+                else
+                    read -p "请输入具体的 ${unit_name} 数 (必须是大于0的整数): " number
+                fi
+
+                local interval_seconds
+                if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
+                    echo -e "\n${RED}输入无效，已使用默认值 1 天。${NC}"
+                    interval_seconds=86400
+                else
+                    interval_seconds=$((number * multiplier))
+                fi
                 
                 apply_watchtower_config "$images_to_install" "$interval_seconds" "安装/更新 Watchtower"
                 press_any_key
@@ -281,7 +312,7 @@ function main_menu() {
                 press_any_key
                 ;;
 
-            4) # 【修改点】修改频率的交互方式
+            4) 
                 if ! does_watchtower_exist; then
                     echo -e "\n${RED}错误：请先安装 Watchtower (选项 1)。${NC}"
                 else
