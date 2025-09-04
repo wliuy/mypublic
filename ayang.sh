@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.13 (彻底修复卸载菜单颜色和分割线问题)
+# AYANG's Toolbox v1.4.14 (Watchtower安装前先列出所有容器名称)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.13"
+readonly SCRIPT_VERSION="1.4.14"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -666,7 +666,7 @@ EOF
             local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' &>/dev/null)
             local memos_installed_color
             if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
-            
+
             echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
             echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
             echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
@@ -747,7 +747,10 @@ EOF
             *) schedule="--interval 86400"; schedule_desc="每天";;
         esac
 
-        read -p "请输入您要 Watchtower 监控的镜像名称（多个镜像请用空格分隔，默认: all）：" images
+        echo -e "\n${gl_lan}当前正在运行的容器有：${gl_bai}"
+        docker ps --format "{{.Names}}" | sed 's/^/  /'
+        echo -e "\n${gl_huang}提示: ${gl_bai}若监控所有容器，请直接回车。"
+        read -p "请输入您要 Watchtower 监控的镜像名称（多个镜像请用空格分隔）：" images
         if [ -z "$images" ]; then
             images="--all"
         fi
@@ -842,16 +845,17 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装:"
-        echo -e "  $(get_app_color 'lucky')1.    Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')2.    FileBrowser (文件管理)${gl_bai}"
-        echo -e "  $(get_app_color 'memos')3.    Memos (轻量笔记)${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')4.    Watchtower (容器自动更新)${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')1.    ${gl_bai}Lucky 反代"
+        echo -e "  $(get_app_color 'filebrowser')2.    ${gl_bai}FileBrowser (文件管理)"
+        echo -e "  $(get_app_color 'memos')3.    ${gl_bai}Memos (轻量笔记)"
+        echo -e "  $(get_app_color 'watchtower')4.    ${gl_bai}Watchtower (容器自动更新)"
+        echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  $(get_app_color 'lucky')-1.   卸载 Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')-2.   卸载 FileBrowser${gl_bai}"
-        echo -e "  $(get_app_color 'memos')-3.   卸载 Memos${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')-4.   卸载 Watchtower${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')-1.   ${gl_bai}卸载 Lucky 反代"
+        echo -e "  $(get_app_color 'filebrowser')-2.   ${gl_bai}卸载 FileBrowser"
+        echo -e "  $(get_app_color 'memos')-3.   ${gl_bai}卸载 Memos"
+        echo -e "  $(get_app_color 'watchtower')-4.   ${gl_bai}卸载 Watchtower"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1059,17 +1063,17 @@ function update_script() {
     clear
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
-    local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
-    local current_version="${SCRIPT_VERSION}"
+    local remote_version=$(curl -sL "${SCRIPT_URL}")
+    local remote_version=$(echo "${remote_script_content}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
 
     if [ -z "$remote_version" ]; then
         echo -e "${gl_hong}获取远程版本失败，请检查网络或链接。${gl_bai}"
         press_any_key_to_continue; return
     fi
 
-    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
+    echo -e "当前版本: ${gl_huang}v${SCRIPT_VERSION}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
-    if [[ "$current_version" == "$remote_version" ]]; then
+    if [[ "$SCRIPT_VERSION" == "$remote_version" ]]; then
         echo -e "\n${gl_lv}已是最新版，无需更新！${gl_bai}"
         sleep 1
     else
