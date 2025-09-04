@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.8 (修复应用管理颜色标记问题)
+# AYANG's Toolbox v1.4.9 (修复应用管理颜色标记问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.8"
+readonly SCRIPT_VERSION="1.4.9"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -275,22 +275,22 @@ function system_tools() {
 # 5. 应用管理
 function app_management() {
     # 动态获取应用状态并设置颜色
-    local lucky_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$")
-    local fb_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$")
-    local memos_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$")
-    local wt_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$")
+    local lucky_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; echo $?)
+    local fb_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; echo $?)
+    local memos_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$"; echo $?)
+    local wt_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; echo $?)
 
     local lucky_color
-    if [ "$lucky_installed_flag" ]; then lucky_color="${gl_lv}"; else lucky_color="${gl_bai}"; fi
+    if [ "$lucky_installed_flag" == "0" ]; then lucky_color="${gl_lv}"; else lucky_color="${gl_bai}"; fi
     
     local fb_color
-    if [ "$fb_installed_flag" ]; then fb_color="${gl_lv}"; else fb_color="${gl_bai}"; fi
+    if [ "$fb_installed_flag" == "0" ]; then fb_color="${gl_lv}"; else fb_color="${gl_bai}"; fi
     
     local memos_color
-    if [ "$memos_installed_flag" ]; then memos_color="${gl_lv}"; else memos_color="${gl_bai}"; fi
+    if [ "$memos_installed_flag" == "0" ]; then memos_color="${gl_lv}"; else memos_color="${gl_bai}"; fi
     
     local wt_color
-    if [ "$wt_installed_flag" ]; then wt_color="${gl_lv}"; else wt_color="${gl_bai}"; fi
+    if [ "$wt_installed_flag" == "0" ]; then wt_color="${gl_lv}"; else wt_color="${gl_bai}"; fi
 
 
     function install_lucky() {
@@ -668,7 +668,10 @@ EOF
             clear
             echo "Memos 管理"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            local memos_installed_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
+            local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' && echo true || echo false)
+            local memos_installed_color
+            if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
+
             echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
             echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
             echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
