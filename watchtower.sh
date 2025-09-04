@@ -17,24 +17,39 @@ is_watchtower_running() {
     docker ps --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"
 }
 
-# 获取并返回已监控和未监控的镜像列表
-get_image_lists() {
+# 获取并返回已监控和未监控的镜像列表以及当前频率
+get_watchtower_info() {
     monitored_images=""
+    current_interval="无"
+
     if is_watchtower_running; then
-        # 从容器命令中提取已监控的镜像
-        monitored_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
+        # 从容器命令中提取所有参数
+        full_command=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
+
+        # 找到 --interval 参数及其值
+        if echo "$full_command" | grep -q -- --interval; then
+            current_interval=$(echo "$full_command" | sed -E 's/.*--interval ([0-9]+).*/\1/')
+        fi
+
+        # 提取镜像名称，排除所有选项和值
+        monitored_images=$(echo "$full_command" | sed -E 's/--[^ ]+ [^ ]+//g' | sed -E 's/^[[:space:]]+//' | sed -E 's/[[:space:]]+$//')
     fi
 
-    unmonitored_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ')
-    
-    # 从未监控列表中移除已监控的镜像
-    for m_img in $monitored_images; do
-        unmonitored_images=$(echo "$unmonitored_images" | sed "s/\b$m_img\b//g")
-    done
+    # 获取所有正在运行的容器镜像，排除 Watchtower 自身
+    all_running_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ')
 
+    # 从所有运行镜像中移除已监控的，得到未监控列表
+    unmonitored_images=$all_running_images
+    if [[ -n "$monitored_images" ]]; then
+        for m_img in $monitored_images; do
+            unmonitored_images=$(echo "$unmonitored_images" | sed "s/\b$m_img\b//g")
+        done
+    fi
+    
     # 返回值
     echo "$monitored_images"
-    echo "$unmonitored_images"
+    echo "$unmonitored_images" | tr -s ' '
+    echo "$current_interval"
 }
 
 # --- 功能菜单 ---
@@ -63,13 +78,12 @@ install_watchtower() {
     echo -e "${GREEN}Watchtower 已成功安装并运行。${NC}"
 }
 
-# 更新 Watchtower 配置（添加/移除/修改）
+# 更新 Watchtower 配置
 update_watchtower_config() {
     local new_images=$1
     local new_interval=$2
     local operation_desc=$3
 
-    # 移除旧容器
     docker rm -f $WATCHTOWER_CONTAINER_NAME &>/dev/null
 
     echo "正在重启 Watchtower 以 ${operation_desc}..."
@@ -87,24 +101,22 @@ update_watchtower_config() {
 main_menu() {
     clear
     echo "--- Watchtower 管理工具 ---"
+    
+    read -a info_array <<< "$(get_watchtower_info)"
+    MONITORED_IMAGES="${info_array[0]:-无}"
+    UNMONITORED_IMAGES="${info_array[1]:-无}"
+    CURRENT_INTERVAL="${info_array[2]:-无}"
+
     echo "Watchtower状态："
     if is_watchtower_running; then
         echo -e "${GREEN}已安装并正在运行${NC}"
-        read -a image_lists <<< "$(get_image_lists)"
-        MONITORED_IMAGES="${image_lists[0]}"
-        UNMONITORED_IMAGES="${image_lists[1]}"
-        CURRENT_INTERVAL=$(docker inspect --format '{{index .Config.Cmd 1}}' $WATCHTOWER_CONTAINER_NAME)
     else
         echo -e "${YELLOW}未安装${NC}"
-        read -a image_lists <<< "$(get_image_lists)"
-        MONITORED_IMAGES="无"
-        UNMONITORED_IMAGES="${image_lists[1]}"
-        CURRENT_INTERVAL="无"
     fi
 
     echo "---------------------------"
-    echo "监控中：${MONITORED_IMAGES:-无}"
-    echo "未监控：${UNMONITORED_IMAGES:-无}"
+    echo "监控中：${MONITORED_IMAGES}"
+    echo "未监控：${UNMONITORED_IMAGES}"
     echo "当前频率：${CURRENT_INTERVAL} 秒"
     echo "---------------------------"
     
