@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.15 (修复应用管理颜色标记问题)
+# AYANG's Toolbox v1.4.16 (修复安装菜单颜色和文字)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.15"
+readonly SCRIPT_VERSION="1.4.16"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -302,7 +302,6 @@ function app_management() {
             echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
             echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
             echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
-            echo -e "重置后，你可以在首次登录时重新设置密码和端口。"
             return
         fi
 
@@ -722,7 +721,7 @@ EOF
 
     function install_watchtower() {
         clear
-        echo -e "${gl_kjlan}正在安装 Watchtower...${gl_bai}"
+        echo -e "${gl_kjlan}正在安装 Watchtower...${gl_bai}";
         if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
 
         if docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; then
@@ -730,8 +729,7 @@ EOF
             return
         fi
 
-        echo -e "${gl_lan}正在拉取 Watchtower 镜像...${gl_bai}"
-        docker pull containrrr/watchtower
+        echo -e "${gl_lan}正在拉取 Watchtower 镜像...${gl_bai}"; docker pull containrrr/watchtower
 
         echo ""
         echo -e "请选择更新频率："
@@ -758,7 +756,7 @@ EOF
 
         local watchtower_cmd="docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule $images"
 
-        echo -e "\n${gl_lan}正在运行 Watchtower 容器...${gl_bai}"
+        echo -e "\n${gl_lan}正在运行 Watchtower 容器...${gl_bai}";
         eval "$watchtower_cmd"
 
         sleep 5
@@ -807,7 +805,7 @@ EOF
         
         echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
             echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
             docker stop filebrowser && docker rm filebrowser
@@ -830,7 +828,7 @@ EOF
             echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return;
         fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
             echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
             echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
@@ -845,18 +843,17 @@ EOF
         clear
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo "安装:"
-        echo -e "  $(get_app_color 'lucky')1.    ${gl_bai}Lucky 反代"
-        echo -e "  $(get_app_color 'filebrowser')2.    ${gl_bai}FileBrowser (文件管理)"
-        echo -e "  $(get_app_color 'memos')3.    ${gl_bai}Memos (轻量笔记)"
-        echo -e "  $(get_app_color 'watchtower')4.    ${gl_bai}Watchtower (容器自动更新)"
-        echo
+        echo "安装&管理:"
+        echo -e "  $(get_app_color 'lucky')1.    Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')2.    FileBrowser (文件管理)${gl_bai}"
+        echo -e "  $(get_app_color 'memos')3.    Memos (轻量笔记)${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')4.    Watchtower (容器自动更新)${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  -1.   $(get_app_color 'lucky')卸载 Lucky 反代${gl_bai}"
-        echo -e "  -2.   $(get_app_color 'filebrowser')卸载 FileBrowser${gl_bai}"
-        echo -e "  -3.   $(get_app_color 'memos')卸载 Memos${gl_bai}"
-        echo -e "  -4.   $(get_app_color 'watchtower')卸载 Watchtower${gl_bai}"
+        echo -e "  -1.   卸载 $(get_app_color 'lucky')Lucky 反代${gl_bai}"
+        echo -e "  -2.   卸载 $(get_app_color 'filebrowser')FileBrowser${gl_bai}"
+        echo -e "  -3.   卸载 $(get_app_color 'memos')Memos${gl_bai}"
+        echo -e "  -4.   卸载 $(get_app_color 'watchtower')Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1140,7 +1137,8 @@ function main_menu() {
     echo -e "${gl_bai}"
     
     # 获取远程版本号
-    local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local remote_version=$(curl -sL "${SCRIPT_URL}")
+    remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
     local current_version="${SCRIPT_VERSION}"
 
     # 显示版本信息
