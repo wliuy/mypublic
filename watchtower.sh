@@ -19,49 +19,41 @@ is_watchtower_running() {
 
 # 获取并返回已监控和未监控的镜像列表以及当前频率
 get_watchtower_info() {
-    monitored_images=""
-    current_interval="无"
+    local monitored_images=""
+    local current_interval="无"
 
     if is_watchtower_running; then
         # 从容器命令中提取所有参数
-        read -a cmd_array <<< $(docker inspect --format '{{json .Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | sed 's/[[",]]/ /g')
+        local full_command=$(docker inspect --format '{{json .Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME)
 
-        monitored_images_array=()
-        skip_next=false
+        # 找到 --interval 的值
+        current_interval=$(echo "$full_command" | grep -oP '(?<="--interval",")[0-9]+(?=")')
+
+        # 提取镜像名称，排除 Watchtower 镜像名和所有参数
+        monitored_images=$(echo "$full_command" | sed -E 's/\["watchtower"\]//g' | sed -E 's/\["containrrr\/watchtower"\]//g' | sed -E 's/"--interval","[^"]+"//g' | tr -d '",[]' | tr ' ' '\n' | grep -v '^\s*$' | tr '\n' ' ' | xargs)
         
-        # 遍历命令数组，找出镜像名称
-        for arg in "${cmd_array[@]}"; do
-            if [[ "$skip_next" = true ]]; then
-                skip_next=false
-                continue
-            fi
-
-            if [[ "$arg" == "--interval" ]]; then
-                current_interval="${cmd_array[i+1]}"
-                skip_next=true
-            elif [[ "$arg" == "containrrr/watchtower" ]]; then
-                continue
-            else
-                monitored_images_array+=("$arg")
-            fi
-        done
-        monitored_images="${monitored_images_array[*]}"
+        # 如果没有 --interval 参数，则从命令中找看是否直接指定了秒数
+        if [[ -z "$current_interval" ]]; then
+            current_interval=$(echo "$full_command" | sed -E 's/.*,([0-9]+)\].*/\1/')
+        fi
     fi
 
     # 获取所有正在运行的容器镜像，排除 Watchtower 自身
-    all_running_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ' | xargs)
+    local all_running_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ' | xargs)
 
     # 从所有运行镜像中移除已监控的，得到未监控列表
-    unmonitored_images=""
+    local unmonitored_images=""
     if [[ -n "$all_running_images" ]]; then
         for img in $all_running_images; do
-            is_monitored=false
-            for m_img in $monitored_images; do
-                if [[ "$img" == "$m_img" ]]; then
-                    is_monitored=true
-                    break
-                fi
-            done
+            local is_monitored=false
+            if [[ -n "$monitored_images" ]]; then
+                for m_img in $monitored_images; do
+                    if [[ "$img" == "$m_img" ]]; then
+                        is_monitored=true
+                        break
+                    fi
+                done
+            fi
             if [[ "$is_monitored" == false ]]; then
                 unmonitored_images+="$img "
             fi
@@ -70,7 +62,7 @@ get_watchtower_info() {
     
     # 返回值
     echo "$monitored_images"
-    echo "$unmonitored_images"
+    echo "$unmonitored_images" | tr -s ' '
     echo "$current_interval"
 }
 
