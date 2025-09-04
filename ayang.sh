@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.18 (彻底修复应用管理菜单颜色标记问题)
+# AYANG's Toolbox v1.4.19 (添加Watchtower管理下级菜单)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.18"
+readonly SCRIPT_VERSION="1.4.19"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -312,8 +312,17 @@ function app_management() {
         sleep 3
         if docker ps -q -f name=^lucky$; then
             echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
-            echo -e "Lucky 容器使用 ${gl_huang}--net=host${gl_bai} 模式，端口由配置文件 lucky.conf 决定。"
-            echo -e "默认访问地址为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
+            
+            if [ -n "$password" ]; then
+                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            else
+                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
+                echo -e "你可以运行 ${gl_lv}docker logs lucky${gl_bai} 手动查看。"
+            fi
+            echo -e "-----------------------------------"
         else
             echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
         fi
@@ -335,7 +344,7 @@ function app_management() {
         mkdir -p /wliuy/filebrowser/config
         chown -R root:root /wliuy/filebrowser
 
-        echo -e "${gl_lan}正在拉取 FileBrowser 镜像并启动容器...${gl_bai}"
+        echo -e "${gl_lan}正在拉取 FileBrowser 镜像并启动容器...${gl_bai}";
         docker run -d --name filebrowser --restart always \
           -u 0:0 \
           -v /wliuy/filebrowser/files:/srv \
@@ -667,12 +676,12 @@ EOF
             local memos_installed_color
             if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
 
-            echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
-            echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
-            echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
-            echo -e "${memos_installed_color}4.    ${gl_bai}卸载 Memos"
+            echo -e "${memos_installed_color}1.    安装 Memos${gl_bai}"
+            echo -e "${gl_kjlan}2.    配置自动备份"
+            echo -e "${gl_kjlan}3.    查看备份日志"
+            echo -e "${memos_installed_color}4.    卸载 Memos${gl_bai}"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_kjlan}0.    返回上一级菜单"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " memos_choice
             case $memos_choice in
@@ -805,7 +814,7 @@ EOF
         
         echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
             echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
             docker stop filebrowser && docker rm filebrowser
@@ -828,7 +837,7 @@ EOF
             echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return;
         fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
+        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
             echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
             echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
@@ -844,17 +853,17 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装&管理:"
-        echo -e "  ${lucky_color}1.    Lucky 反代${gl_bai}"
-        echo -e "  ${fb_color}2.    FileBrowser (文件管理)${gl_bai}"
-        echo -e "  ${memos_color}3.    Memos (轻量笔记)${gl_bai}"
-        echo -e "  ${wt_color}4.    Watchtower (容器自动更新)${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')1.    Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')2.    FileBrowser (文件管理)${gl_bai}"
+        echo -e "  $(get_app_color 'memos')3.    Memos (轻量笔记)${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')4.    Watchtower (容器自动更新)${gl_bai}"
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  -1.   ${lucky_color}卸载 Lucky 反代${gl_bai}"
-        echo -e "  -2.   ${fb_color}卸载 FileBrowser${gl_bai}"
-        echo -e "  -3.   ${memos_color}卸载 Memos${gl_bai}"
-        echo -e "  -4.   ${wt_color}卸载 Watchtower${gl_bai}"
+        echo -e "  -1.   卸载 $(get_app_color 'lucky')Lucky 反代${gl_bai}"
+        echo -e "  -2.   卸载 $(get_app_color 'filebrowser')FileBrowser${gl_bai}"
+        echo -e "  -3.   卸载 $(get_app_color 'memos')Memos${gl_bai}"
+        echo -e "  -4.   卸载 $(get_app_color 'watchtower')Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1062,7 +1071,7 @@ function update_script() {
     clear
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
-    local remote_script_content=$(curl -sL "${SCRIPT_URL}")
+    local remote_version=$(curl -sL "${SCRIPT_URL}")
     local remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
 
     if [ -z "$remote_version" ]; then
