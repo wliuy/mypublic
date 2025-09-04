@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.12 (修复卸载菜单颜色标记问题)
+# AYANG's Toolbox v1.4.13 (彻底修复卸载菜单颜色和分割线问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.12"
+readonly SCRIPT_VERSION="1.4.13"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -302,7 +302,6 @@ function app_management() {
             echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
             echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
             echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
-            echo -e "重置后，你可以在首次登录时重新设置密码和端口。"
             return
         fi
 
@@ -664,10 +663,10 @@ EOF
             clear
             echo "Memos 管理"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' && echo true || echo false)
+            local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' &>/dev/null)
             local memos_installed_color
             if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
-
+            
             echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
             echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
             echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
@@ -847,12 +846,12 @@ EOF
         echo -e "  $(get_app_color 'filebrowser')2.    FileBrowser (文件管理)${gl_bai}"
         echo -e "  $(get_app_color 'memos')3.    Memos (轻量笔记)${gl_bai}"
         echo -e "  $(get_app_color 'watchtower')4.    Watchtower (容器自动更新)${gl_bai}"
-        echo
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  $(get_app_color 'lucky')-1.   ${gl_bai}卸载 Lucky 反代"
-        echo -e "  $(get_app_color 'filebrowser')-2.   ${gl_bai}卸载 FileBrowser"
-        echo -e "  $(get_app_color 'memos')-3.   ${gl_bai}卸载 Memos"
-        echo -e "  $(get_app_color 'watchtower')-4.   ${gl_bai}卸载 Watchtower"
+        echo -e "  $(get_app_color 'lucky')-1.   卸载 Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')-2.   卸载 FileBrowser${gl_bai}"
+        echo -e "  $(get_app_color 'memos')-3.   卸载 Memos${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')-4.   卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1060,17 +1059,17 @@ function update_script() {
     clear
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
-    local remote_script_content=$(curl -sL "${SCRIPT_URL}")
-    local remote_version=$(echo "${remote_script_content}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local current_version="${SCRIPT_VERSION}"
 
     if [ -z "$remote_version" ]; then
         echo -e "${gl_hong}获取远程版本失败，请检查网络或链接。${gl_bai}"
         press_any_key_to_continue; return
     fi
 
-    echo -e "当前版本: ${gl_huang}v${SCRIPT_VERSION}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
+    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
-    if [[ "$SCRIPT_VERSION" == "$remote_version" ]]; then
+    if [[ "$current_version" == "$remote_version" ]]; then
         echo -e "\n${gl_lv}已是最新版，无需更新！${gl_bai}"
         sleep 1
     else
