@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.2 (集成Watchtower安装与卸载)
+# AYANG's Toolbox v1.4.5 (主页显示当前版本号和最新版本号)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.2"
+readonly SCRIPT_VERSION="1.4.5"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -274,10 +274,11 @@ function system_tools() {
 
 # 5. 应用管理
 function app_management() {
-    local lucky_color=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
-    local fb_color=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
-    local memos_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
-    local wt_color=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$" && echo -e "${gl_kjlan}" || echo -e "${gl_bai}")
+    # 动态获取应用状态并设置颜色
+    local lucky_color=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
+    local fb_color=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
+    local memos_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
+    local wt_color=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
 
     function install_lucky() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
@@ -302,7 +303,7 @@ function app_management() {
         
         sleep 3
         if docker ps -q -f name=^lucky$; then
-            echo -e "${gl_lv}Lucky 安装成功！${gl_bai}"
+            echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
             echo -e "Lucky 容器使用 ${gl_huang}--net=host${gl_bai} 模式，端口由配置文件 lucky.conf 决定。"
             echo -e "默认访问地址为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
         else
@@ -406,6 +407,50 @@ function app_management() {
                 echo -e "-----------------------------------"
             else
                 echo -e "${gl_hong}Memos 容器启动失败，请检查 Docker 日志。${gl_bai}"
+            fi
+        }
+
+        function uninstall_memos() {
+            local MEMOS_DATA_DIR="/wliuy/memos"
+            local SYNC_SCRIPT_BASE="/wliuy/memos/sync_memos"
+            local LOG_FILE="/var/log/sync_memos.log"
+            
+            clear; echo -e "${gl_kjlan}正在卸载 Memos...${gl_bai}"
+            if ! docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+                echo -e "${gl_huang}未找到 Memos 容器，无需卸载。${gl_bai}"; return;
+            fi
+
+            echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
+            echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
+            echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
+            read -p "如确认继续，请输入 'y' 或 '1': " confirm
+            if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+                echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
+                docker stop memos && docker rm memos
+                
+                echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
+                docker rmi neosmemo/memos:latest
+                
+                echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
+                rm -rf ${MEMOS_DATA_DIR}
+                
+                echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
+                if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                    for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
+                        ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
+                        rm -f "$script"
+                    done
+                    rmdir "${SYNC_SCRIPT_BASE}" >/dev/null 2>&1
+                fi
+                
+                echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
+                if [ -f "${LOG_FILE}" ]; then
+                    rm -f "${LOG_FILE}"
+                fi
+                
+                echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
+            else
+                echo -e "${gl_huang}操作已取消。${gl_bai}"
             fi
         }
 
@@ -605,7 +650,17 @@ EOF
         }
 
         while true; do
-            clear; echo "Memos 管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. 安装 Memos"; echo "2. 配置自动备份"; echo "3. 查看备份日志"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回上一级菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            clear
+            echo "Memos 管理"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            local memos_installed_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
+            echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
+            echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
+            echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
+            echo -e "${memos_installed_color}4.    ${gl_bai}卸载 Memos"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " memos_choice
             case $memos_choice in
                 1) install_memos; press_any_key_to_continue ;;
@@ -628,6 +683,7 @@ EOF
                         echo "1. 添加备份配置"
                         echo "2. 删除备份配置"
                         echo "3. 立即备份所有"
+                        echo "4. 查看备份日志"
                         echo -e "${gl_hong}----------------------------------------${gl_bai}"
                         echo "0. 返回上一级菜单"
                         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -636,12 +692,14 @@ EOF
                             1) setup_memos_sync; press_any_key_to_continue ;;
                             2) delete_memos_sync; press_any_key_to_continue ;;
                             3) run_memos_sync; press_any_key_to_continue ;;
+                            4) view_memos_sync_log; press_any_key_to_continue ;;
                             0) break ;;
                             *) echo "无效输入"; sleep 1 ;;
                         esac
                     done
                     ;;
                 3) view_memos_sync_log; press_any_key_to_continue ;;
+                4) uninstall_memos; press_any_key_to_continue ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -723,7 +781,7 @@ EOF
             echo -e "${gl_huang}操作已取消。${gl_bai}"
         fi
     }
-    
+
     function uninstall_filebrowser() {
         clear; echo -e "${gl_kjlan}正在卸载 FileBrowser...${gl_bai}"
         if ! docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
@@ -764,67 +822,23 @@ EOF
         fi
     }
     
-    function uninstall_memos() {
-        local MEMOS_DATA_DIR="/wliuy/memos"
-        local SYNC_SCRIPT_BASE="/wliuy/memos/sync_memos"
-        local LOG_FILE="/var/log/sync_memos.log"
-        
-        clear; echo -e "${gl_kjlan}正在卸载 Memos...${gl_bai}"
-        if ! docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
-            echo -e "${gl_huang}未找到 Memos 容器，无需卸载。${gl_bai}"; return;
-        fi
-
-        echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
-        echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
-        echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
-        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
-            echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
-            docker stop memos && docker rm memos
-            
-            echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
-            docker rmi neosmemo/memos:latest
-            
-            echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
-            rm -rf ${MEMOS_DATA_DIR}
-            
-            echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
-            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
-                for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
-                    ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
-                    rm -f "$script"
-                done
-                rmdir "${SYNC_SCRIPT_BASE}" >/dev/null 2>&1
-            fi
-            
-            echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
-            if [ -f "${LOG_FILE}" ]; then
-                rm -f "${LOG_FILE}"
-            fi
-            
-            echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
-        else
-            echo -e "${gl_huang}操作已取消。${gl_bai}"
-        fi
-    }
-
     while true; do
         clear
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装:"
-        echo -e "  ${lucky_color}1. Lucky 反代"
-        echo -e "  ${fb_color}2. FileBrowser (文件管理)"
-        echo -e "  ${memos_color}3. Memos (轻量笔记)"
-        echo -e "  ${wt_color}4. Watchtower (容器自动更新)"
+        echo -e "  ${lucky_color}1.    ${gl_bai}Lucky 反代"
+        echo -e "  ${fb_color}2.    ${gl_bai}FileBrowser (文件管理)"
+        echo -e "  ${memos_color}3.    ${gl_bai}Memos (轻量笔记)"
+        echo -e "  ${wt_color}4.    ${gl_bai}Watchtower (容器自动更新)"
         echo
         echo "卸载:"
-        echo -e "  ${lucky_color}-1. 卸载 Lucky 反代"
-        echo -e "  ${fb_color}-2. 卸载 FileBrowser"
-        echo -e "  ${memos_color}-3. 卸载 Memos"
-        echo -e "  ${wt_color}-4. 卸载 Watchtower"
+        echo -e "  ${lucky_color}-1.   ${gl_bai}卸载 Lucky 反代"
+        echo -e "  ${fb_color}-2.   ${gl_bai}卸载 FileBrowser"
+        echo -e "  ${memos_color}-3.   ${gl_bai}卸载 Memos"
+        echo -e "  ${wt_color}-4.   ${gl_bai}卸载 Watchtower"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo -e "0. 返回主菜单"
+        echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
@@ -942,7 +956,7 @@ EOF
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
                 2) read -p "输入删除卷名: " volume; docker volume rm $volume ;;
-                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker volume prune -f; fi ;;
+                3) read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker volume prune -f; fi ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -1067,8 +1081,16 @@ function uninstall_script() {
     local shortcut_path="/usr/local/bin/y"
     local root_copy_path="/root/ayang.sh"
 
-    if [[ "$(id -u)" -ne 0 ]]; then echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}"; press_any_key_to_continue; return; fi
-    if [ ! -f "${shortcut_path}" ] && [ ! -f "${root_copy_path}" ]; then echo -e "${gl_huang}脚本未安装或文件不存在，无需卸载。${gl_bai}"; press_any_key_to_continue; return; fi
+    if [[ "$(id -u)" -ne 0 ]]; then
+        echo -e "${gl_hong}错误：卸载过程需要 root 权限。${gl_bai}";
+        press_any_key_to_continue;
+        return;
+    fi
+    if [ ! -f "${shortcut_path}" ] && [ ! -f "${root_copy_path}" ]; then
+        echo -e "${gl_huang}脚本未安装或文件不存在，无需卸载。${gl_bai}";
+        press_any_key_to_continue;
+        return;
+    fi
 
     echo -e "${gl_hong}警告：这将从系统中永久删除脚本 '${shortcut_path}' 和 '${root_copy_path}'。${gl_bai}"
     read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
@@ -1079,7 +1101,9 @@ function uninstall_script() {
         echo -e "\n${gl_lv}✅ 卸载完成！${gl_bai}"
         echo -e "所有相关文件已被移除。"; echo -e "脚本即将退出。"; sleep 1; exit 0
     else
-        echo -e "\n${gl_huang}操作已取消。${gl_bai}"; press_any_key_to_continue; return
+        echo -e "\n${gl_huang}操作已取消。${gl_bai}";
+        press_any_key_to_continue;
+        return
     fi
 }
 
