@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.5 (主页显示当前版本号和最新版本号)
+# AYANG's Toolbox v1.4.6 (主页显示版本状态)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.5"
+readonly SCRIPT_VERSION="1.4.6"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -423,7 +423,7 @@ function app_management() {
             echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
             echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
             echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
-            read -p "如确认继续，请输入 'y' 或 '1': " confirm
+            read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
             if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
                 echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
                 docker stop memos && docker rm memos
@@ -956,7 +956,7 @@ EOF
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
                 2) read -p "输入删除卷名: " volume; docker volume rm $volume ;;
-                3) read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker volume prune -f; fi ;;
+                3) read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定删除所有未使用的卷吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker volume prune -f; fi ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -1118,7 +1118,18 @@ function main_menu() {
     echo -e "     ██║  ██║    ██║    ██║  ██║██║ ╚████║╚██████╔╝"
     echo -e "     ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
     echo -e "${gl_bai}"
+    
+    # 获取远程版本号
+    local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+
+    # 显示版本信息
     echo -e "${gl_lan}              AYANG's Toolbox v${SCRIPT_VERSION}               ${gl_bai}"
+    if [[ "$SCRIPT_VERSION" == "$remote_version" ]]; then
+        echo -e "${gl_lv}                (已是最新版)                ${gl_bai}"
+    else
+        echo -e "${gl_huang}              (发现新版本: v${remote_version})               ${gl_bai}"
+    fi
+
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
     echo -e "${gl_kjlan}1.    ${gl_bai}系统信息查询"
     echo -e "${gl_kjlan}2.    ${gl_bai}系统更新"
