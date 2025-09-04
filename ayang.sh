@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.14 (Watchtower安装前先列出所有容器名称)
+# AYANG's Toolbox v1.4.15 (修复应用管理颜色标记问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.14"
+readonly SCRIPT_VERSION="1.4.15"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -278,9 +278,9 @@ function app_management() {
     function get_app_color() {
         local container_name="$1"
         if docker ps -a --filter "name=^${container_name}$" --format "{{.Names}}" | grep -q "${container_name}" &>/dev/null; then
-            echo -e "${gl_lv}"
+            echo "${gl_lv}"
         else
-            echo -e "${gl_bai}"
+            echo "${gl_bai}"
         fi
     }
 
@@ -302,6 +302,7 @@ function app_management() {
             echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
             echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
             echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
+            echo -e "重置后，你可以在首次登录时重新设置密码和端口。"
             return
         fi
 
@@ -750,7 +751,7 @@ EOF
         echo -e "\n${gl_lan}当前正在运行的容器有：${gl_bai}"
         docker ps --format "{{.Names}}" | sed 's/^/  /'
         echo -e "\n${gl_huang}提示: ${gl_bai}若监控所有容器，请直接回车。"
-        read -p "请输入您要 Watchtower 监控的镜像名称（多个镜像请用空格分隔）：" images
+        read -p "请输入您要 Watchtower 监控的镜像名称（多个镜像请用空格分隔，默认: all）：" images
         if [ -z "$images" ]; then
             images="--all"
         fi
@@ -852,10 +853,10 @@ EOF
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  $(get_app_color 'lucky')-1.   ${gl_bai}卸载 Lucky 反代"
-        echo -e "  $(get_app_color 'filebrowser')-2.   ${gl_bai}卸载 FileBrowser"
-        echo -e "  $(get_app_color 'memos')-3.   ${gl_bai}卸载 Memos"
-        echo -e "  $(get_app_color 'watchtower')-4.   ${gl_bai}卸载 Watchtower"
+        echo -e "  -1.   $(get_app_color 'lucky')卸载 Lucky 反代${gl_bai}"
+        echo -e "  -2.   $(get_app_color 'filebrowser')卸载 FileBrowser${gl_bai}"
+        echo -e "  -3.   $(get_app_color 'memos')卸载 Memos${gl_bai}"
+        echo -e "  -4.   $(get_app_color 'watchtower')卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
