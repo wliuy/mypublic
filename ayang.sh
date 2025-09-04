@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.6 (主页显示版本状态)
+# AYANG's Toolbox v1.4.7 (修复应用管理颜色标记问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.6"
+readonly SCRIPT_VERSION="1.4.7"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -275,10 +275,23 @@ function system_tools() {
 # 5. 应用管理
 function app_management() {
     # 动态获取应用状态并设置颜色
-    local lucky_color=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
-    local fb_color=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
-    local memos_color=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
-    local wt_color=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$" && echo -e "${gl_lv}" || echo -e "${gl_bai}")
+    local lucky_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$")
+    local fb_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$")
+    local memos_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$")
+    local wt_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$")
+
+    local lucky_color
+    [[ $lucky_installed ]] && lucky_color="${gl_lv}" || lucky_color="${gl_bai}"
+    
+    local fb_color
+    [[ $fb_installed ]] && fb_color="${gl_lv}" || fb_color="${gl_bai}"
+    
+    local memos_color
+    [[ $memos_installed ]] && memos_color="${gl_lv}" || memos_color="${gl_bai}"
+    
+    local wt_color
+    [[ $wt_installed ]] && wt_color="${gl_lv}" || wt_color="${gl_bai}"
+
 
     function install_lucky() {
         clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
@@ -377,7 +390,7 @@ function app_management() {
         local LOG_FILE="/var/log/sync_memos.log"
 
         function install_memos() {
-            clear; echo -e "${gl_kjlan}正在安装 Memos...${gl_bai}"
+            clear; echo -e "${gl_kjlan}正在安装 Memos...${gl_bai}";
             if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
 
             if docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
@@ -390,7 +403,9 @@ function app_management() {
             fi
 
             echo -e "${gl_lan}正在创建数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"; mkdir -p ${MEMOS_DATA_DIR}
-            echo -e "${gl_lan}正在拉取 neosmemo/memos 镜像并启动容器...${gl_bai}"
+            echo -e "${gl_lan}正在拉取 neosmemo/memos 镜像并启动容器...${gl_bai}"; docker pull neosmemo/memos:latest
+
+            echo -e "${gl_lan}正在运行 Memos 容器...${gl_bai}"; 
             docker run -d --name memos --restart unless-stopped \
               -p 5230:5230 \
               -v ${MEMOS_DATA_DIR}:/var/opt/memos \
@@ -1121,10 +1136,11 @@ function main_menu() {
     
     # 获取远程版本号
     local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local current_version="${SCRIPT_VERSION}"
 
     # 显示版本信息
-    echo -e "${gl_lan}              AYANG's Toolbox v${SCRIPT_VERSION}               ${gl_bai}"
-    if [[ "$SCRIPT_VERSION" == "$remote_version" ]]; then
+    echo -e "${gl_lan}              AYANG's Toolbox v${current_version}               ${gl_bai}"
+    if [[ "$current_version" == "$remote_version" ]]; then
         echo -e "${gl_lv}                (已是最新版)                ${gl_bai}"
     else
         echo -e "${gl_huang}              (发现新版本: v${remote_version})               ${gl_bai}"
