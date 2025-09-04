@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# AYANG's Watchtower Management Toolbox (v2.3)
+# AYANG's Watchtower Management Toolbox (v2.4)
 #
 
 # --- 颜色定义 ---
@@ -28,15 +28,37 @@ function does_watchtower_exist() {
     docker ps -a --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"
 }
 
+# 【新增】将秒数格式化为易读的单位
+function format_interval() {
+    local seconds=$1
+    if [[ ! "$seconds" =~ ^[0-9]+$ || "$seconds" -lt 1 ]]; then
+        echo "无"
+        return
+    fi
+
+    if (( seconds % 2592000 == 0 )); then
+        echo "$((seconds / 2592000)) 月"
+    elif (( seconds % 604800 == 0 )); then
+        echo "$((seconds / 604800)) 周"
+    elif (( seconds % 86400 == 0 )); then
+        echo "$((seconds / 86400)) 天"
+    elif (( seconds % 3600 == 0 )); then
+        echo "$((seconds / 3600)) 小时"
+    else
+        echo "$seconds 秒"
+    fi
+}
+
 # 核心函数：获取 Watchtower 的详细信息
 function get_watchtower_info() {
     local monitored_containers=""
     local unmonitored_containers=""
-    local current_interval="-"
+    local current_interval_seconds="-"
+    local formatted_interval="无"
     local is_monitoring_all=false
 
     if ! does_watchtower_exist; then
-        echo "$monitored_containers;$unmonitored_containers;$current_interval;$is_monitoring_all"
+        echo "$monitored_containers;$unmonitored_containers;$current_interval_seconds;$formatted_interval;$is_monitoring_all"
         return
     fi
 
@@ -55,7 +77,7 @@ function get_watchtower_info() {
     local next_is_interval=false
     for arg in "${cmd_array[@]}"; do
         if [[ "$next_is_interval" == "true" ]]; then
-            current_interval="$arg"
+            current_interval_seconds="$arg"
             next_is_interval=false
             continue
         fi
@@ -69,6 +91,9 @@ function get_watchtower_info() {
         esac
     done
     monitored_containers=$(echo "$monitored_containers" | xargs)
+
+    # 【修改点】调用新函数格式化时间
+    formatted_interval=$(format_interval "$current_interval_seconds")
 
     local all_running_containers
     all_running_containers=$(docker ps --format "{{.Names}}" | grep -v "^$WATCHTOWER_CONTAINER_NAME$" | tr '\n' ' ' | xargs)
@@ -84,7 +109,9 @@ function get_watchtower_info() {
         sorted_monitored=$(echo "$monitored_containers" | tr ' ' '\n' | sort)
         unmonitored_containers=$(comm -23 <(echo "$sorted_all") <(echo "$sorted_monitored") | tr '\n' ' ' | xargs)
     fi
-    echo "$monitored_containers;$unmonitored_containers;$current_interval;$is_monitoring_all"
+    
+    # 【修改点】返回原始秒数和格式化后的字符串
+    echo "$monitored_containers;$unmonitored_containers;$current_interval_seconds;$formatted_interval;$is_monitoring_all"
 }
 
 # --- 功能函数 ---
@@ -123,7 +150,7 @@ function apply_watchtower_config() {
     fi
 }
 
-# 【新增】卸载 Watchtower 函数
+# 卸载 Watchtower 函数
 function uninstall_watchtower() {
     clear
     echo "--- 卸载 Watchtower ---"
@@ -138,13 +165,10 @@ function uninstall_watchtower() {
     if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
         echo -e "\n${YELLOW} -> 正在停止 Watchtower 容器...${NC}"
         docker stop "$WATCHTOWER_CONTAINER_NAME" &>/dev/null
-        
         echo -e "${YELLOW} -> 正在删除 Watchtower 容器...${NC}"
         docker rm "$WATCHTOWER_CONTAINER_NAME" &>/dev/null
-        
         echo -e "${YELLOW} -> 正在删除 Watchtower 镜像 ($WATCHTOWER_IMAGE)...${NC}"
         docker rmi "$WATCHTOWER_IMAGE" &>/dev/null
-        
         echo -e "\n${GREEN}Watchtower 已被彻底卸载。${NC}"
     else
         echo -e "\n${YELLOW}操作已取消。${NC}"
@@ -156,9 +180,10 @@ function uninstall_watchtower() {
 function main_menu() {
     while true; do
         clear
-        echo "--- Watchtower 管理工具 (v2.3) ---"
+        echo "--- Watchtower 管理工具 (v2.4) ---"
 
-        IFS=';' read -r MONITORED_IMAGES UNMONITORED_IMAGES CURRENT_INTERVAL IS_MONITORING_ALL < <(get_watchtower_info)
+        # 【修改点】读取5个返回值
+        IFS=';' read -r MONITORED_IMAGES UNMONITORED_IMAGES CURRENT_INTERVAL_SECONDS FORMATTED_INTERVAL IS_MONITORING_ALL < <(get_watchtower_info)
 
         echo -e "\n${CYAN}Watchtower 状态：${NC}"
         if docker ps --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"; then
@@ -172,7 +197,8 @@ function main_menu() {
         echo -e "\n${CYAN}监控详情：${NC}"
         echo -e "  监控中   : ${CYAN}${MONITORED_IMAGES:-无}${NC}"
         echo -e "  未监控   : ${UNMONITORED_IMAGES:-无}"
-        echo -e "  更新频率 : ${CURRENT_INTERVAL:-无} 秒"
+        # 【修改点】显示格式化后的时间
+        echo -e "  更新频率 : ${FORMATTED_INTERVAL:-无}"
         echo "------------------------------------"
         
         echo "请选择一个操作："
@@ -184,13 +210,10 @@ function main_menu() {
         echo "  2. 添加监控应用"
         echo "  3. 移除监控应用"
         echo "  4. 修改监控频率"
-        # 【修改点】5号选项变为卸载
         echo "  5. 卸载 Watchtower"
-        # 【修改点】增加红色分割线和0号退出选项
         echo -e "${RED}------------------------------------${NC}"
         echo "  0. 退出脚本"
         echo "------------------------------------"
-        # 【修改点】更新选择范围
         read -p "请输入您的选择 (0-5): " choice
         
         case $choice in
@@ -220,7 +243,7 @@ function main_menu() {
                     if [[ -n "$images_to_add" ]]; then
                         local new_images
                         new_images=$(echo "$MONITORED_IMAGES $images_to_add" | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
-                        apply_watchtower_config "$new_images" "$CURRENT_INTERVAL" "添加监控应用"
+                        apply_watchtower_config "$new_images" "$CURRENT_INTERVAL_SECONDS" "添加监控应用"
                     else
                         echo -e "\n${YELLOW}未输入任何应用，操作取消。${NC}"
                     fi
@@ -249,7 +272,7 @@ function main_menu() {
                         if [[ "$final_images" == "$MONITORED_IMAGES" ]]; then
                              echo -e "\n${YELLOW}没有有效的应用被移除，配置未更改。${NC}"
                         else
-                             apply_watchtower_config "$final_images" "$CURRENT_INTERVAL" "移除监控应用"
+                             apply_watchtower_config "$final_images" "$CURRENT_INTERVAL_SECONDS" "移除监控应用"
                         fi
                     else
                         echo -e "\n${YELLOW}未输入任何应用，操作取消。${NC}"
@@ -258,30 +281,51 @@ function main_menu() {
                 press_any_key
                 ;;
 
-            4)
+            4) # 【修改点】修改频率的交互方式
                 if ! does_watchtower_exist; then
                     echo -e "\n${RED}错误：请先安装 Watchtower (选项 1)。${NC}"
                 else
-                    read -p "当前频率为 ${CURRENT_INTERVAL} 秒，请输入新的更新频率 (秒): " new_interval
-                    if [[ "$new_interval" =~ ^[0-9]+$ ]]; then
+                    echo ""
+                    echo "--- 修改监控频率 (当前: $FORMATTED_INTERVAL) ---"
+                    echo "请选择新的时间单位："
+                    echo "  1. 小时"
+                    echo "  2. 天"
+                    echo "  3. 周"
+                    echo "  4. 月 (按30天计算)"
+                    read -p "请输入您的选择 (1-4, 其他键取消): " unit_choice
+
+                    local multiplier=0
+                    local unit_name=""
+
+                    case $unit_choice in
+                        1) multiplier=3600; unit_name="小时" ;;
+                        2) multiplier=86400; unit_name="天" ;;
+                        3) multiplier=604800; unit_name="周" ;;
+                        4) multiplier=2592000; unit_name="月" ;;
+                        *) echo -e "\n${YELLOW}操作已取消。${NC}"; press_any_key; continue ;;
+                    esac
+
+                    read -p "请输入具体的 ${unit_name} 数 (必须是大于0的整数): " number
+                    if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
+                        echo -e "\n${RED}输入无效，操作取消。${NC}"
+                    else
+                        local new_interval=$((number * multiplier))
                         local monitored_list_for_update="$MONITORED_IMAGES"
                         if [[ "$IS_MONITORING_ALL" == "true" ]]; then
                             monitored_list_for_update=""
                         fi
                         apply_watchtower_config "$monitored_list_for_update" "$new_interval" "修改更新频率"
-                    else
-                        echo -e "\n${RED}输入无效，频率必须是纯数字。${NC}"
                     fi
                 fi
                 press_any_key
                 ;;
 
-            5) # 【修改点】调用卸载函数
+            5) 
                 uninstall_watchtower
                 press_any_key
                 ;;
 
-            0) # 【修改点】新的退出选项
+            0) 
                 echo "退出脚本。"
                 break
                 ;;
