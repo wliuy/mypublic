@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# AYANG's Watchtower Management Toolbox (v2.5)
+# AYANG's Watchtower Management Toolbox (v2.6)
 #
 
 # --- 颜色定义 ---
@@ -99,7 +99,8 @@ function get_watchtower_info() {
 
     if [[ -z "$monitored_containers" ]]; then
         is_monitoring_all=true
-        monitored_containers="所有正在运行的应用"
+        # 【修改点】当监控所有时，直接显示所有正在运行的应用名
+        monitored_containers="$all_running_containers"
         unmonitored_containers="无"
     else
         local sorted_all
@@ -133,8 +134,9 @@ function apply_watchtower_config() {
     if [[ -n "$interval" && "$interval" != "-" ]]; then
         docker_run_cmd+=" --interval $interval"
     fi
-
-    if [[ "$containers_to_monitor" != "所有正在运行的应用" ]]; then
+    
+    # 这里的逻辑保持不变，当传入的列表为空时，即为监控所有
+    if [[ -n "$containers_to_monitor" ]]; then
          docker_run_cmd+=" $containers_to_monitor"
     fi
     
@@ -178,7 +180,7 @@ function uninstall_watchtower() {
 function main_menu() {
     while true; do
         clear
-        echo "--- Watchtower 管理工具 (v2.5) ---"
+        echo "--- Watchtower 管理工具 (v2.6) ---"
 
         IFS=';' read -r MONITORED_IMAGES UNMONITORED_IMAGES CURRENT_INTERVAL_SECONDS FORMATTED_INTERVAL IS_MONITORING_ALL < <(get_watchtower_info)
 
@@ -213,7 +215,7 @@ function main_menu() {
         read -p "请输入您的选择 (0-5): " choice
         
         case $choice in
-            1) # 【修改点】安装流程使用新的频率设置方式
+            1)
                 local running_containers
                 running_containers=$(docker ps --format "{{.Names}}" | grep -v "^$WATCHTOWER_CONTAINER_NAME$" | tr '\n' ' ')
                 echo -e "\n当前正在运行的应用有:\n  ${CYAN}${running_containers:-无}${NC}"
@@ -343,6 +345,7 @@ function main_menu() {
                         local new_interval=$((number * multiplier))
                         local monitored_list_for_update="$MONITORED_IMAGES"
                         if [[ "$IS_MONITORING_ALL" == "true" ]]; then
+                            # 当监控所有时，传递一个空列表给更新函数
                             monitored_list_for_update=""
                         fi
                         apply_watchtower_config "$monitored_list_for_update" "$new_interval" "修改更新频率"
