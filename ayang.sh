@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.17 (修复更新检查逻辑)
+# AYANG's Toolbox v1.4.18 (彻底修复应用管理菜单颜色标记问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.17"
+readonly SCRIPT_VERSION="1.4.18"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -411,7 +411,7 @@ function app_management() {
                 local public_ip=$(curl -s https://ipinfo.io/ip)
                 echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
                 echo -e "-----------------------------------"
-                echo -e "访问地址: ${gl_lv}http://${public_ip}:5230${gl_bai}"
+                echo -e "访问地址: ${gl_lv}${public_ip}:5230${gl_bai}"
                 echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
                 echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
                 echo -e "-----------------------------------"
@@ -805,7 +805,7 @@ EOF
         
         echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
         echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
             echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
             docker stop filebrowser && docker rm filebrowser
@@ -828,7 +828,7 @@ EOF
             echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return;
         fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+        read -p "如确认继续，请输入 'y' 或 '1': " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
             echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
             echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
@@ -844,17 +844,17 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装&管理:"
-        echo -e "  $(get_app_color 'lucky')1.${gl_bai}    Lucky 反代"
-        echo -e "  $(get_app_color 'filebrowser')2.${gl_bai}    FileBrowser (文件管理)"
-        echo -e "  $(get_app_color 'memos')3.${gl_bai}    Memos (轻量笔记)"
-        echo -e "  $(get_app_color 'watchtower')4.${gl_bai}    Watchtower (容器自动更新)"
+        echo -e "  ${lucky_color}1.    Lucky 反代${gl_bai}"
+        echo -e "  ${fb_color}2.    FileBrowser (文件管理)${gl_bai}"
+        echo -e "  ${memos_color}3.    Memos (轻量笔记)${gl_bai}"
+        echo -e "  ${wt_color}4.    Watchtower (容器自动更新)${gl_bai}"
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  -1.   $(get_app_color 'lucky')卸载 Lucky 反代${gl_bai}"
-        echo -e "  -2.   $(get_app_color 'filebrowser')卸载 FileBrowser${gl_bai}"
-        echo -e "  -3.   $(get_app_color 'memos')卸载 Memos${gl_bai}"
-        echo -e "  -4.   $(get_app_color 'watchtower')卸载 Watchtower${gl_bai}"
+        echo -e "  -1.   ${lucky_color}卸载 Lucky 反代${gl_bai}"
+        echo -e "  -2.   ${fb_color}卸载 FileBrowser${gl_bai}"
+        echo -e "  -3.   ${memos_color}卸载 Memos${gl_bai}"
+        echo -e "  -4.   ${wt_color}卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1062,7 +1062,7 @@ function update_script() {
     clear
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
-    local remote_version=$(curl -sL "${SCRIPT_URL}")
+    local remote_script_content=$(curl -sL "${SCRIPT_URL}")
     local remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
 
     if [ -z "$remote_version" ]; then
