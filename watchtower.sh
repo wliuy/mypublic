@@ -28,26 +28,24 @@ check_watchtower_status() {
 list_images() {
     echo ""
     echo "--- 正在被 Watchtower 监控的镜像 ---"
+    monitored_images=""
     if docker ps --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"; then
-        # 从 docker inspect 中提取命令行参数来获取正在监控的镜像
-        monitored_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | grep -oP '(\S+:\S+|\S+/\S+:\S+)' | tr '\n' ' ')
+        monitored_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
         echo "$monitored_images"
     else
         echo "Watchtower 未运行，无法获取监控镜像列表。"
     fi
-
-    echo ""
-    echo "--- 未被监控的镜像 ---"
-    # 查找所有容器镜像，并排除掉 Watchtower 本身和已监控的镜像
+    echo "------------------------------------"
+    echo "--- 当前系统中的其他镜像（未监控）---"
     unmonitored_images=$(docker ps --format "{{.Image}}" | grep -v "$WATCHTOWER_IMAGE" | tr '\n' ' ')
     
-    # 移除已监控的镜像，只保留未监控的
+    # 从未监控列表中移除已监控的镜像，确保不重复
     for m_img in $monitored_images; do
         unmonitored_images=$(echo "$unmonitored_images" | sed "s/\b$m_img\b//g")
     done
     
-    # 去除多余空格
     echo "$unmonitored_images" | tr -s ' '
+    echo "--------------------------------------"
 }
 
 # 安装和运行 Watchtower
@@ -78,56 +76,64 @@ install_watchtower() {
 
 # 添加新镜像到监控列表
 add_image() {
+    list_images
     read -p "请输入要添加的镜像名称（多个用空格分隔）：" images_to_add
     if [[ -z "$images_to_add" ]]; then
-        echo "未输入任何镜像。"
+        echo -e "${YELLOW}未输入任何镜像，操作取消。${NC}"
         return
     fi
     
-    current_cmd=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME)
-    new_cmd=$(echo "$current_cmd" | sed -e 's/]/ '"$images_to_add"']/')
+    current_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
+    new_images="$current_images $images_to_add"
+    
+    # 移除旧容器
+    docker rm -f $WATCHTOWER_CONTAINER_NAME &>/dev/null
     
     echo "正在重启 Watchtower 以添加新镜像..."
-    docker update --restart=no $WATCHTOWER_CONTAINER_NAME
-    docker commit --change="CMD $new_cmd" $WATCHTOWER_CONTAINER_NAME $WATCHTOWER_IMAGE:temp
-    docker stop $WATCHTOWER_CONTAINER_NAME
-    docker rm $WATCHTOWER_CONTAINER_NAME
-    
     docker run -d --name $WATCHTOWER_CONTAINER_NAME \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        $WATCHTOWER_IMAGE:temp
-        
-    docker rmi $WATCHTOWER_IMAGE:temp
+        $WATCHTOWER_IMAGE \
+        --interval $(docker inspect --format '{{index .Config.Cmd 1}}' $WATCHTOWER_CONTAINER_NAME) \
+        $new_images
+    
     echo -e "${GREEN}镜像已成功添加。${NC}"
 }
 
 # 移除监控镜像
 remove_image() {
+    list_images
     read -p "请输入要移除的镜像名称（多个用空格分隔）：" images_to_remove
     if [[ -z "$images_to_remove" ]]; then
-        echo "未输入任何镜像。"
+        echo -e "${YELLOW}未输入任何镜像，操作取消。${NC}"
         return
     fi
     
-    current_cmd=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME)
+    current_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
     
-    for img in $images_to_remove; do
-        current_cmd=$(echo "$current_cmd" | sed "s|$img||g")
+    new_images_list=""
+    for current_img in $current_images; do
+        is_removed=false
+        for remove_img in $images_to_remove; do
+            if [[ "$current_img" == "$remove_img" ]]; then
+                is_removed=true
+                break
+            fi
+        done
+        if [[ "$is_removed" == false ]]; then
+            new_images_list+="$current_img "
+        fi
     done
     
-    new_cmd=$(echo "$current_cmd" | tr -s ' ' | sed 's/[] ]*/]/' | sed 's/[[]/\[/g')
+    # 移除旧容器
+    docker rm -f $WATCHTOWER_CONTAINER_NAME &>/dev/null
     
     echo "正在重启 Watchtower 以移除镜像..."
-    docker update --restart=no $WATCHTOWER_CONTAINER_NAME
-    docker commit --change="CMD $new_cmd" $WATCHTOWER_CONTAINER_NAME $WATCHTOWER_IMAGE:temp
-    docker stop $WATCHTOWER_CONTAINER_NAME
-    docker rm $WATCHTOWER_CONTAINER_NAME
-    
     docker run -d --name $WATCHTOWER_CONTAINER_NAME \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        $WATCHTOWER_IMAGE:temp
-        
-    docker rmi $WATCHTOWER_IMAGE:temp
+        $WATCHTOWER_IMAGE \
+        --interval $(docker inspect --format '{{index .Config.Cmd 1}}' $WATCHTOWER_CONTAINER_NAME) \
+        $new_images_list
+    
     echo -e "${GREEN}镜像已成功移除。${NC}"
 }
 
@@ -139,22 +145,18 @@ modify_frequency() {
         return
     fi
     
-    current_cmd=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME)
+    current_images=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
     
-    # 查找并替换 --interval 参数
-    new_cmd=$(echo "$current_cmd" | sed "s/--interval [0-9]*/--interval $new_interval/")
+    # 移除旧容器
+    docker rm -f $WATCHTOWER_CONTAINER_NAME &>/dev/null
     
     echo "正在重启 Watchtower 以修改更新频率..."
-    docker update --restart=no $WATCHTOWER_CONTAINER_NAME
-    docker commit --change="CMD $new_cmd" $WATCHTOWER_CONTAINER_NAME $WATCHTOWER_IMAGE:temp
-    docker stop $WATCHTOWER_CONTAINER_NAME
-    docker rm $WATCHTOWER_CONTAINER_NAME
-    
     docker run -d --name $WATCHTOWER_CONTAINER_NAME \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        $WATCHTOWER_IMAGE:temp
+        $WATCHTOWER_IMAGE \
+        --interval $new_interval \
+        $current_images
         
-    docker rmi $WATCHTOWER_IMAGE:temp
     echo -e "${GREEN}更新频率已成功修改。${NC}"
 }
 
@@ -166,31 +168,27 @@ main_menu() {
     check_watchtower_status
     echo "---------------------------"
     echo "请选择一个操作："
-    echo "1. 安装 Watchtower 并开始监控"
-    echo "2. 查看当前监控状态"
-    echo "3. 添加监控镜像"
-    echo "4. 移除监控镜像"
-    echo "5. 修改监控频率"
-    echo "6. 退出"
-    read -p "请输入您的选择 (1-6)：" choice
+    echo "1. 安装/配置 Watchtower"
+    echo "2. 添加监控镜像"
+    echo "3. 移除监控镜像"
+    echo "4. 修改监控频率"
+    echo "5. 退出"
+    read -p "请输入您的选择 (1-5)：" choice
     
     case $choice in
         1)
             install_watchtower
             ;;
         2)
-            list_images
-            ;;
-        3)
             add_image
             ;;
-        4)
+        3)
             remove_image
             ;;
-        5)
+        4)
             modify_frequency
             ;;
-        6)
+        5)
             echo "退出脚本。"
             exit 0
             ;;
