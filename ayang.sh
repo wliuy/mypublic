@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.22 (彻底修复Watchtower菜单和颜色问题)
+# AYANG's Toolbox v1.4.22 (修复Watchtower菜单跳转问题)
 #
 
 # --- 全局配置 ---
@@ -281,6 +281,1111 @@ function app_management() {
             echo "${gl_lv}"
         else
             echo "${gl_bai}"
+        fi
+    }
+
+    local lucky_color=$(get_app_color "lucky")
+    local fb_color=$(get_app_color "filebrowser")
+    local memos_color=$(get_app_color "memos")
+    local wt_color=$(get_app_color "watchtower")
+
+    function install_lucky() {
+        clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+        
+        local public_ip=$(curl -s https://ipinfo.io/ip)
+        local data_dir="/docker/goodluck"
+
+        if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
+            echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"
+            echo -e "访问地址通常为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
+            echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
+            echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
+            echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_lan}正在创建数据目录 ${data_dir}...${gl_bai}"; mkdir -p ${data_dir}
+        echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"; docker pull gdy666/lucky
+        echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -v ${data_dir}:/goodluck gdy666/lucky
+        
+        sleep 3
+        if docker ps -q -f name=^lucky$; then
+            echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
+            
+            if [ -n "$password" ]; then
+                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            else
+                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
+                echo -e "你可以运行 ${gl_lv}docker logs lucky${gl_bai} 手动查看。"
+            fi
+            echo -e "-----------------------------------"
+        else
+            echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
+        fi
+    }
+    
+    function install_filebrowser() {
+        clear; echo -e "${gl_kjlan}正在安装 FileBrowser...${gl_bai}";
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+        if docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
+            echo -e "\n${gl_huang}FileBrowser 容器已存在，无需重复安装。${gl_bai}"
+            local public_ip=$(curl -s https://ipinfo.io/ip)
+            echo -e "你可以通过 ${gl_lv}http://${public_ip}:5566${gl_bai} 来访问。"
+            return
+        fi
+
+        echo -e "${gl_lan}正在创建本地目录...${gl_bai}"
+        mkdir -p /wliuy/filebrowser/database
+        mkdir -p /wliuy/filebrowser/config
+        chown -R root:root /wliuy/filebrowser
+
+        echo -e "${gl_lan}正在拉取 FileBrowser 镜像并启动容器...${gl_bai}";
+        docker run -d --name filebrowser --restart always \
+          -u 0:0 \
+          -v /wliuy/filebrowser/files:/srv \
+          -v /wliuy/filebrowser/database:/database \
+          -v /wliuy/filebrowser/config:/config \
+          -p 5566:80 \
+          filebrowser/filebrowser
+
+        echo -e "${gl_lan}等待容器启动并生成日志...${gl_bai}"
+        local timeout=20
+        local start_time=$(date +%s)
+        local password=""
+        while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
+            local log_line=$(docker logs filebrowser 2>&1 | grep "password: " | tail -n 1)
+            if [ -n "$log_line" ]; then
+                password=$(echo "$log_line" | awk '{print $NF}' | tr -d '\r')
+                break
+            fi
+            sleep 1
+        done
+
+        if docker ps -q -f name=^filebrowser$; then
+            local public_ip=$(curl -s https://ipinfo.io/ip)
+            local access_url="http://${public_ip}:5566"
+            local username="admin"
+
+            echo -e "\n${gl_lv}FileBrowser 安装成功！${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
+            
+            if [ -n "$password" ]; then
+                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            else
+                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
+                echo -e "你可以运行 ${gl_lv}docker logs filebrowser${gl_bai} 手动查看。"
+            fi
+            echo -e "-----------------------------------"
+        else
+            echo -e "${gl_hong}FileBrowser 容器启动失败，请检查 Docker 日志。${gl_bai}"
+        fi
+    }
+    
+    function memos_management() {
+        local MEMOS_DATA_DIR="/wliuy/memos"
+        local SYNC_SCRIPT_BASE="/wliuy/memos/sync_memos"
+        local LOG_FILE="/var/log/sync_memos.log"
+
+        function install_memos() {
+            clear; echo -e "${gl_kjlan}正在安装 Memos...${gl_bai}";
+            if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+            if docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+                echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
+                local public_ip=$(curl -s https://ipinfo.io/ip)
+                echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
+                echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
+                return
+            fi
+
+            echo -e "${gl_lan}正在创建数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"; mkdir -p ${MEMOS_DATA_DIR}
+            echo -e "${gl_lan}正在拉取 neosmemo/memos 镜像并启动容器...${gl_bai}"; docker pull neosmemo/memos:latest
+
+            echo -e "${gl_lan}正在运行 Memos 容器...${gl_bai}"; 
+            docker run -d --name memos --restart unless-stopped \
+              -p 5230:5230 \
+              -v ${MEMOS_DATA_DIR}:/var/opt/memos \
+              neosmemo/memos:latest
+
+            sleep 5
+            if docker ps -q -f name=^memos$; then
+                local public_ip=$(curl -s https://ipinfo.io/ip)
+                echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
+                echo -e "-----------------------------------"
+                echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
+                echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
+                echo -e "-----------------------------------"
+            else
+                echo -e "${gl_hong}Memos 容器启动失败，请检查 Docker 日志。${gl_bai}"
+            fi
+        }
+
+        function uninstall_memos() {
+            local MEMOS_DATA_DIR="/wliuy/memos"
+            local SYNC_SCRIPT_BASE="/wliuy/memos/sync_memos"
+            local LOG_FILE="/var/log/sync_memos.log"
+            
+            clear; echo -e "${gl_kjlan}正在卸载 Memos...${gl_bai}"
+            if ! docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+                echo -e "${gl_huang}未找到 Memos 容器，无需卸载。${gl_bai}"; return;
+            fi
+
+            echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
+            echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
+            echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
+            read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+            if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+                echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
+                docker stop memos && docker rm memos
+                
+                echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
+                docker rmi neosmemo/memos:latest
+                
+                echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
+                rm -rf ${MEMOS_DATA_DIR}
+                
+                echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
+                if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                    for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
+                        ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
+                        rm -f "$script"
+                    done
+                    rmdir "${SYNC_SCRIPT_BASE}" >/dev/null 2>&1
+                fi
+                
+                echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
+                if [ -f "${LOG_FILE}" ]; then
+                    rm -f "${LOG_FILE}"
+                fi
+                
+                echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
+            else
+                echo -e "${gl_huang}操作已取消。${gl_bai}"
+            fi
+        }
+
+        function setup_memos_sync() {
+            clear; echo -e "${gl_kjlan}正在配置 Memos 自动备份...${gl_bai}"
+
+            read -p "请输入远程服务器地址 (REMOTE_HOST): " remote_host
+            read -p "请输入远程服务器SSH端口 (REMOTE_PORT): " remote_port
+            read -p "请输入远程服务器用户名 (REMOTE_USER): " remote_user
+            read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
+            read -p "请输入本地 Memos 数据目录 (LOCAL_DIR, 默认: /wliuy/memos/): " local_dir
+            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos/): " remote_dir
+            
+            local_dir=${local_dir:-"/wliuy/memos/"}
+            remote_dir=${remote_dir:-"/wliuy/memos/"}
+            
+            echo ""
+
+            if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$remote_pass" ]; then
+                echo -e "${gl_hong}输入信息不完整，备份配置已取消。${gl_bai}"
+                return
+            fi
+            
+            # 检查并安装 sshpass
+            if ! command -v sshpass &> /dev/null; then
+                echo -e "📦 安装 sshpass..."
+                install sshpass
+            else
+                echo -e "📦 sshpass 已安装，跳过安装"
+            fi
+            
+            # 生成 SSH 密钥
+            echo -e "🔐 检查 SSH 密钥..."
+            if [ ! -f ~/.ssh/id_rsa ]; then
+                echo -e "🗝️ 生成新的 SSH 密钥..."
+                ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+            fi
+
+            # 配置 SSH 免密登录
+            echo -e "🔗 配置 SSH 免密登录（端口 $remote_port）..."
+            sshpass -p "$remote_pass" ssh-copy-id -p "$remote_port" -o StrictHostKeyChecking=no "${remote_user}@${remote_host}" >/dev/null 2>&1
+            
+            # 测试 SSH 连接
+            echo -e "✅ 测试免密登录..."
+            if ssh -p "$remote_port" -o BatchMode=yes "${remote_user}@${remote_host}" 'echo 连接成功' &>/dev/null; then
+                echo -e "✅ SSH 免密登录配置成功！"
+            else
+                echo -e "❌ SSH 免密登录失败，请检查端口、防火墙或密码。"
+                return 1
+            fi
+
+            # 创建同步脚本
+            echo -e "📝 创建同步脚本 ${SYNC_SCRIPT_BASE}..."
+            mkdir -p "${SYNC_SCRIPT_BASE}"
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${remote_host}.sh"
+            
+            cat > "${sync_script_path}" <<EOF
+#!/bin/bash
+
+# 获取命令行参数
+REMOTE_HOST="\$1"
+REMOTE_PORT="\$2"
+REMOTE_USER="\$3"
+LOCAL_DIR="\$4"
+REMOTE_DIR="\$5"
+CONTAINER_NAME="memos"
+
+# 确保远程目录存在
+echo "正在检查并创建远程目录: \$REMOTE_DIR"
+if ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "mkdir -p '\$REMOTE_DIR'"; then
+    echo "远程目录检查成功或已创建。"
+else
+    echo "远程目录创建失败，请检查SSH连接和权限。"
+    exit 1
+fi
+
+# 检查远程 memos 容器是否存在且正在运行
+if ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker inspect --format '{{.State.Running}}' \$CONTAINER_NAME" &>/dev/null; then
+    echo "停止远程 memos 容器..."
+    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker stop \$CONTAINER_NAME"
+    echo "开始同步数据..."
+    rsync -avz --checksum --delete -e "ssh -p \$REMOTE_PORT" "\$LOCAL_DIR" "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_DIR"
+    echo "启动远程 memos 容器..."
+    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker start \$CONTAINER_NAME"
+else
+    echo "远程 memos 容器未运行或不存在，只同步数据..."
+    rsync -avz --checksum --delete -e "ssh -p \$REMOTE_PORT" "\$LOCAL_DIR" "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_DIR"
+fi
+EOF
+            chmod +x "${sync_script_path}"
+
+            # 添加定时任务
+            local cron_job="0 0 * * * ${sync_script_path} ${remote_host} ${remote_port} ${remote_user} ${local_dir} ${remote_dir} >> ${LOG_FILE} 2>&1"
+            echo -e "📅 添加定时任务（每天 0 点执行）..."
+            ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ; echo "$cron_job" ) | crontab -
+
+            echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据到 ${remote_host}。"
+        }
+        
+        function delete_memos_sync() {
+            clear; echo -e "${gl_kjlan}删除 Memos 备份配置...${gl_bai}"
+
+            local configured_servers=""
+            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+            fi
+
+            if [ -z "$configured_servers" ]; then
+                echo -e "----------------------------------------"
+                echo -e "${gl_huang}未找到任何已配置的远程备份服务器。${gl_bai}"
+                return
+            fi
+
+            echo -e "----------------------------------------"
+            echo -e "${gl_kjlan}已配置的远程服务器:${gl_bai}"
+            echo "$configured_servers" | sed 's/^/  /'
+            echo -e "----------------------------------------"
+
+            read -p "请输入要删除备份配置的服务器地址: " server_to_delete
+
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${server_to_delete}.sh"
+            if [ -f "$sync_script_path" ]; then
+                echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
+                read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+                if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+                    # 删除定时任务
+                    ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
+                    # 删除脚本文件
+                    rm -f "${sync_script_path}"
+                    echo -e "${gl_lv}✅ 备份配置已成功删除。${gl_bai}"
+                else
+                    echo -e "${gl_huang}操作已取消。${gl_bai}"
+                fi
+            else
+                echo -e "${gl_hong}错误：未找到服务器 ${server_to_delete} 的备份配置。${gl_bai}"
+            fi
+        }
+
+        function run_memos_sync() {
+            clear; echo -e "${gl_kjlan}立即执行 Memos 备份...${gl_bai}"
+            echo -e "----------------------------------------"
+            local configured_scripts=""
+            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                configured_scripts=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null)
+            fi
+
+            if [ -z "$configured_scripts" ]; then
+                echo -e "${gl_huang}未找到任何已配置的远程备份服务器。请先添加备份配置。${gl_bai}"
+                return
+            fi
+            
+            local total_backups=$(echo "$configured_scripts" | wc -l)
+            local backup_count=0
+            
+            echo -e "${gl_lan}正在对所有已配置的远程服务器执行备份...${gl_bai}\n"
+            
+            for script_name in $configured_scripts; do
+                local sync_script_path="${SYNC_SCRIPT_BASE}/${script_name}"
+                # 从脚本文件名中提取服务器地址
+                local server_address=$(echo "$script_name" | sed 's/sync_memos_//g;s/.sh//g')
+                
+                # 从 crontab 中查找对应的配置行来提取参数
+                local cron_line=$(crontab -l 2>/dev/null | grep "$sync_script_path")
+                local remote_host=$(echo "$cron_line" | awk '{print $7}')
+                local remote_port=$(echo "$cron_line" | awk '{print $8}')
+                local remote_user=$(echo "$cron_line" | awk '{print $9}')
+                local local_dir=$(echo "$cron_line" | awk '{print $10}')
+                local remote_dir=$(echo "$cron_line" | awk '{print $11}')
+
+                if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$local_dir" ] || [ -z "$remote_dir" ]; then
+                    echo -e "${gl_hong}错误：未能从定时任务中解析出完整的备份参数。请重新配置。${gl_bai}"
+                    continue
+                fi
+
+                backup_count=$((backup_count + 1))
+                echo -e "▶️  (${backup_count}/${total_backups}) 正在备份到服务器: ${gl_lv}${server_address}${gl_bai}"
+                
+                # 显式传递参数给子脚本
+                bash "$sync_script_path" "$remote_host" "$remote_port" "$remote_user" "$local_dir" "$remote_dir"
+                
+                if [ $? -eq 0 ]; then
+                    echo -e "✅ 备份任务执行完毕。\n"
+                else
+                    echo -e "${gl_hong}❌ 备份任务执行失败。\n"
+                fi
+            done
+        }
+
+        function view_memos_sync_log() {
+            clear
+            echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
+            echo -e "----------------------------------------"
+            if [ -f "${LOG_FILE}" ]; then
+                tail -n 50 "${LOG_FILE}"
+            else
+                echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
+            fi
+            echo -e "----------------------------------------"
+        }
+
+        while true; do
+            clear
+            echo "Memos 管理"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' &>/dev/null)
+            local memos_installed_color
+            if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
+
+            echo -e "${memos_installed_color}1.    安装 Memos${gl_bai}"
+            echo -e "${gl_kjlan}2.    配置自动备份"
+            echo -e "${gl_kjlan}3.    查看备份日志"
+            echo -e "${memos_installed_color}4.    卸载 Memos${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " memos_choice
+            case $memos_choice in
+                1) install_memos; press_any_key_to_continue ;;
+                2)
+                    while true; do
+                        clear
+                        echo "Memos 自动备份管理"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "已配置的远程服务器:"
+                        local configured_servers=""
+                        if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                            configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+                        fi
+                        if [ -z "$configured_servers" ]; then
+                            echo -e "  ${gl_hui}无${gl_bai}"
+                        else
+                            echo "$configured_servers" | sed 's/^/  /'
+                        fi
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "1. 添加备份配置"
+                        echo "2. 删除备份配置"
+                        echo "3. 立即备份所有"
+                        echo "4. 查看备份日志"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "0. 返回上一级菜单"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        read -p "请输入你的选择: " sync_choice
+                        case $sync_choice in
+                            1) setup_memos_sync; press_any_key_to_continue ;;
+                            2) delete_memos_sync; press_any_key_to_continue ;;
+                            3) run_memos_sync; press_any_key_to_continue ;;
+                            4) view_memos_sync_log; press_any_key_to_continue ;;
+                            0) break ;;
+                            *) echo "无效输入"; sleep 1 ;;
+                        esac
+                    done
+                    ;;
+                3) view_memos_sync_log; press_any_key_to_continue ;;
+                4) uninstall_memos; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+
+    function watchtower_management() {
+        local wt_installed_flag=$(docker ps -a --filter "name=^watchtower$" --format "{{.Names}}" | grep -q 'watchtower' &>/dev/null)
+        local wt_installed_color="${gl_bai}"
+        if [ "$wt_installed_flag" == "true" ]; then wt_installed_color="${gl_lv}"; fi
+        local wt_status="${gl_hong}未安装${gl_bai}"
+        if [ "$wt_installed_flag" == "true" ]; then wt_status="${gl_lv}已安装${gl_bai}"; fi
+        
+        local monitored_containers=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        local all_containers=$(docker ps --format "{{.Names}}")
+        local unmonitored_containers=$(comm -23 <(echo "$all_containers" | sort) <(echo "$monitored_containers" | sort))
+
+        while true; do
+            clear
+            echo -e "${gl_kjlan}Watchtower 管理${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo "安装状态:"
+            echo -e "  - ${wt_status}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            
+            if [ "$wt_installed_flag" == "true" ]; then
+                echo "已监控的镜像:"
+                if [ -n "$monitored_containers" ]; then
+                    echo "$monitored_containers" | sed "s/^/  ${gl_lv}- /"
+                else
+                    echo "  ${gl_hui}- 无${gl_bai}"
+                fi
+                echo
+                echo "未监控的镜像:"
+                if [ -n "$unmonitored_containers" ]; then
+                    echo "$unmonitored_containers" | sed "s/^/  ${gl_bai}- /"
+                else
+                    echo "  ${gl_hui}- 无${gl_bai}"
+                fi
+                echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                echo -e "${gl_kjlan}1.    ${gl_bai}重新安装 Watchtower"
+                echo -e "${gl_kjlan}2.    ${gl_bai}新增添加监控镜像"
+                echo -e "${gl_kjlan}3.    ${gl_bai}删除监控镜像"
+            else
+                echo -e "${gl_kjlan}1.    ${gl_bai}安装 Watchtower"
+            fi
+            
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " wt_choice
+            case $wt_choice in
+                1) install_watchtower; press_any_key_to_continue ;;
+                2) add_watchtower_image; press_any_key_to_continue ;;
+                3) remove_watchtower_image; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+
+    local lucky_color=$(get_app_color "lucky")
+    local fb_color=$(get_app_color "filebrowser")
+    local memos_color=$(get_app_color "memos")
+    local wt_color=$(get_app_color "watchtower")
+
+    function install_lucky() {
+        clear; echo -e "${gl_kjlan}正在安装 Lucky 反代...${gl_bai}";
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+        
+        local public_ip=$(curl -s https://ipinfo.io/ip)
+        local data_dir="/docker/goodluck"
+
+        if docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
+            echo -e "\n${gl_huang}Lucky 容器已存在，无需重复安装。${gl_bai}"
+            echo -e "访问地址通常为 ${gl_lv}http://${public_ip}:16601${gl_bai}"
+            echo -e "\n${gl_huang}温馨提示：${gl_bai}由于 Lucky 配置文件是加密的，无法直接读取其端口和安全入口。"
+            echo -e "如需重置，请删除 ${gl_hong}${data_dir}/lucky_base.lkcf${gl_bai} 文件，"
+            echo -e "然后重启 lucky 容器，例如：${gl_lv}docker restart lucky${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_lan}正在创建数据目录 ${data_dir}...${gl_bai}"; mkdir -p ${data_dir}
+        echo -e "${gl_lan}正在拉取 gdy666/lucky 镜像...${gl_bai}"; docker pull gdy666/lucky
+        echo -e "${gl_lan}正在启动 Lucky 容器...${gl_bai}"; docker run -d --name lucky --restart always --net=host -v ${data_dir}:/goodluck gdy666/lucky
+        
+        sleep 3
+        if docker ps -q -f name=^lucky$; then
+            echo -e "\n${gl_lv}Lucky 安装成功！${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
+            
+            if [ -n "$password" ]; then
+                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            else
+                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
+                echo -e "你可以运行 ${gl_lv}docker logs lucky${gl_bai} 手动查看。"
+            fi
+            echo -e "-----------------------------------"
+        else
+            echo -e "${gl_hong}Lucky 容器启动失败，请检查 Docker 日志。${gl_bai}"
+        fi
+    }
+    
+    function install_filebrowser() {
+        clear; echo -e "${gl_kjlan}正在安装 FileBrowser...${gl_bai}";
+        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+        if docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
+            echo -e "\n${gl_huang}FileBrowser 容器已存在，无需重复安装。${gl_bai}"
+            local public_ip=$(curl -s https://ipinfo.io/ip)
+            echo -e "你可以通过 ${gl_lv}http://${public_ip}:5566${gl_bai} 来访问。"
+            return
+        fi
+
+        echo -e "${gl_lan}正在创建本地目录...${gl_bai}"
+        mkdir -p /wliuy/filebrowser/database
+        mkdir -p /wliuy/filebrowser/config
+        chown -R root:root /wliuy/filebrowser
+
+        echo -e "${gl_lan}正在拉取 FileBrowser 镜像并启动容器...${gl_bai}";
+        docker run -d --name filebrowser --restart always \
+          -u 0:0 \
+          -v /wliuy/filebrowser/files:/srv \
+          -v /wliuy/filebrowser/database:/database \
+          -v /wliuy/filebrowser/config:/config \
+          -p 5566:80 \
+          filebrowser/filebrowser
+
+        echo -e "${gl_lan}等待容器启动并生成日志...${gl_bai}"
+        local timeout=20
+        local start_time=$(date +%s)
+        local password=""
+        while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
+            local log_line=$(docker logs filebrowser 2>&1 | grep "password: " | tail -n 1)
+            if [ -n "$log_line" ]; then
+                password=$(echo "$log_line" | awk '{print $NF}' | tr -d '\r')
+                break
+            fi
+            sleep 1
+        done
+
+        if docker ps -q -f name=^filebrowser$; then
+            local public_ip=$(curl -s https://ipinfo.io/ip)
+            local access_url="http://${public_ip}:5566"
+            local username="admin"
+
+            echo -e "\n${gl_lv}FileBrowser 安装成功！${gl_bai}"
+            echo -e "-----------------------------------"
+            echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+            echo -e "默认用户名: ${gl_lv}${username}${gl_bai}"
+            
+            if [ -n "$password" ]; then
+                echo -e "默认密码: ${gl_lv}${password}${gl_bai}"
+            else
+                echo -e "${gl_hong}注意：${gl_bai}未能从日志中自动获取密码。默认密码可能为 ${gl_lv}admin${gl_bai} 或其他随机值，请检查日志。"
+                echo -e "你可以运行 ${gl_lv}docker logs filebrowser${gl_bai} 手动查看。"
+            fi
+            echo -e "-----------------------------------"
+        else
+            echo -e "${gl_hong}FileBrowser 容器启动失败，请检查 Docker 日志。${gl_bai}"
+        fi
+    }
+    
+    function memos_management() {
+        local MEMOS_DATA_DIR="/wliuy/memos"
+        local SYNC_SCRIPT_BASE="/wliuy/memos/sync_memos"
+        local LOG_FILE="/var/log/sync_memos.log"
+
+        function install_memos() {
+            clear; echo -e "${gl_kjlan}正在安装 Memos...${gl_bai}";
+            if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
+
+            if docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+                echo -e "\n${gl_huang}Memos 容器已存在，无需重复安装。${gl_bai}"
+                local public_ip=$(curl -s https://ipinfo.io/ip)
+                echo -e "你可以通过 ${gl_lv}http://${public_ip}:5230${gl_bai} 来访问。"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
+                echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
+                return
+            fi
+
+            echo -e "${gl_lan}正在创建数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"; mkdir -p ${MEMOS_DATA_DIR}
+            echo -e "${gl_lan}正在拉取 neosmemo/memos 镜像并启动容器...${gl_bai}"; docker pull neosmemo/memos:latest
+
+            echo -e "${gl_lan}正在运行 Memos 容器...${gl_bai}"; 
+            docker run -d --name memos --restart unless-stopped \
+              -p 5230:5230 \
+              -v ${MEMOS_DATA_DIR}:/var/opt/memos \
+              neosmemo/memos:latest
+
+            sleep 5
+            if docker ps -q -f name=^memos$; then
+                local public_ip=$(curl -s https://ipinfo.io/ip)
+                echo -e "\n${gl_lv}Memos 安装成功！${gl_bai}"
+                echo -e "-----------------------------------"
+                echo -e "访问地址: ${gl_lv}${access_url}${gl_bai}"
+                echo -e "默认登录信息: ${gl_lv}首次访问页面时自行设置。${gl_bai}"
+                echo -e "数据库及配置文件保存在: ${gl_lv}${MEMOS_DATA_DIR}${gl_bai}"
+                echo -e "-----------------------------------"
+            else
+                echo -e "${gl_hong}Memos 容器启动失败，请检查 Docker 日志。${gl_bai}"
+            fi
+        }
+
+        function uninstall_memos() {
+            local MEMOS_DATA_DIR="/wliuy/memos"
+            local SYNC_SCRIPT_BASE="/wliuy/memos/sync_memos"
+            local LOG_FILE="/var/log/sync_memos.log"
+            
+            clear; echo -e "${gl_kjlan}正在卸载 Memos...${gl_bai}"
+            if ! docker ps -a --format '{{.Names}}' | grep -q "^memos$"; then
+                echo -e "${gl_huang}未找到 Memos 容器，无需卸载。${gl_bai}"; return;
+            fi
+
+            echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
+            echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
+            echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
+            read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+            if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+                echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
+                docker stop memos && docker rm memos
+                
+                echo -e "${gl_lan}正在删除 memos 镜像...${gl_bai}"
+                docker rmi neosmemo/memos:latest
+                
+                echo -e "${gl_lan}正在删除本地数据目录 ${MEMOS_DATA_DIR}...${gl_bai}"
+                rm -rf ${MEMOS_DATA_DIR}
+                
+                echo -e "${gl_lan}正在删除同步脚本和定时任务...${gl_bai}"
+                if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                    for script in "${SYNC_SCRIPT_BASE}"/*.sh; do
+                        ( crontab -l 2>/dev/null | grep -v "$script" ) | crontab -
+                        rm -f "$script"
+                    done
+                    rmdir "${SYNC_SCRIPT_BASE}" >/dev/null 2>&1
+                fi
+                
+                echo -e "${gl_lan}正在清理日志文件 ${LOG_FILE}...${gl_bai}"
+                if [ -f "${LOG_FILE}" ]; then
+                    rm -f "${LOG_FILE}"
+                fi
+                
+                echo -e "${gl_lv}✅ Memos 已被彻底卸载。${gl_bai}"
+            else
+                echo -e "${gl_huang}操作已取消。${gl_bai}"
+            fi
+        }
+
+        function setup_memos_sync() {
+            clear; echo -e "${gl_kjlan}正在配置 Memos 自动备份...${gl_bai}"
+
+            read -p "请输入远程服务器地址 (REMOTE_HOST): " remote_host
+            read -p "请输入远程服务器SSH端口 (REMOTE_PORT): " remote_port
+            read -p "请输入远程服务器用户名 (REMOTE_USER): " remote_user
+            read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
+            read -p "请输入本地 Memos 数据目录 (LOCAL_DIR, 默认: /wliuy/memos/): " local_dir
+            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos/): " remote_dir
+            
+            local_dir=${local_dir:-"/wliuy/memos/"}
+            remote_dir=${remote_dir:-"/wliuy/memos/"}
+            
+            echo ""
+
+            if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$remote_pass" ]; then
+                echo -e "${gl_hong}输入信息不完整，备份配置已取消。${gl_bai}"
+                return
+            fi
+            
+            # 检查并安装 sshpass
+            if ! command -v sshpass &> /dev/null; then
+                echo -e "📦 安装 sshpass..."
+                install sshpass
+            else
+                echo -e "📦 sshpass 已安装，跳过安装"
+            fi
+            
+            # 生成 SSH 密钥
+            echo -e "🔐 检查 SSH 密钥..."
+            if [ ! -f ~/.ssh/id_rsa ]; then
+                echo -e "🗝️ 生成新的 SSH 密钥..."
+                ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+            fi
+
+            # 配置 SSH 免密登录
+            echo -e "🔗 配置 SSH 免密登录（端口 $remote_port）..."
+            sshpass -p "$remote_pass" ssh-copy-id -p "$remote_port" -o StrictHostKeyChecking=no "${remote_user}@${remote_host}" >/dev/null 2>&1
+            
+            # 测试 SSH 连接
+            echo -e "✅ 测试免密登录..."
+            if ssh -p "$remote_port" -o BatchMode=yes "${remote_user}@${remote_host}" 'echo 连接成功' &>/dev/null; then
+                echo -e "✅ SSH 免密登录配置成功！"
+            else
+                echo -e "❌ SSH 免密登录失败，请检查端口、防火墙或密码。"
+                return 1
+            fi
+
+            # 创建同步脚本
+            echo -e "📝 创建同步脚本 ${SYNC_SCRIPT_BASE}..."
+            mkdir -p "${SYNC_SCRIPT_BASE}"
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${remote_host}.sh"
+            
+            cat > "${sync_script_path}" <<EOF
+#!/bin/bash
+
+# 获取命令行参数
+REMOTE_HOST="\$1"
+REMOTE_PORT="\$2"
+REMOTE_USER="\$3"
+LOCAL_DIR="\$4"
+REMOTE_DIR="\$5"
+CONTAINER_NAME="memos"
+
+# 确保远程目录存在
+echo "正在检查并创建远程目录: \$REMOTE_DIR"
+if ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "mkdir -p '\$REMOTE_DIR'"; then
+    echo "远程目录检查成功或已创建。"
+else
+    echo "远程目录创建失败，请检查SSH连接和权限。"
+    exit 1
+fi
+
+# 检查远程 memos 容器是否存在且正在运行
+if ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker inspect --format '{{.State.Running}}' \$CONTAINER_NAME" &>/dev/null; then
+    echo "停止远程 memos 容器..."
+    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker stop \$CONTAINER_NAME"
+    echo "开始同步数据..."
+    rsync -avz --checksum --delete -e "ssh -p \$REMOTE_PORT" "\$LOCAL_DIR" "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_DIR"
+    echo "启动远程 memos 容器..."
+    ssh -p "\$REMOTE_PORT" "\$REMOTE_USER@\$REMOTE_HOST" "docker start \$CONTAINER_NAME"
+else
+    echo "远程 memos 容器未运行或不存在，只同步数据..."
+    rsync -avz --checksum --delete -e "ssh -p \$REMOTE_PORT" "\$LOCAL_DIR" "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_DIR"
+fi
+EOF
+            chmod +x "${sync_script_path}"
+
+            # 添加定时任务
+            local cron_job="0 0 * * * ${sync_script_path} ${remote_host} ${remote_port} ${remote_user} ${local_dir} ${remote_dir} >> ${LOG_FILE} 2>&1"
+            echo -e "📅 添加定时任务（每天 0 点执行）..."
+            ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ; echo "$cron_job" ) | crontab -
+
+            echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据到 ${remote_host}。"
+        }
+        
+        function delete_memos_sync() {
+            clear; echo -e "${gl_kjlan}删除 Memos 备份配置...${gl_bai}"
+
+            local configured_servers=""
+            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+            fi
+
+            if [ -z "$configured_servers" ]; then
+                echo -e "----------------------------------------"
+                echo -e "${gl_huang}未找到任何已配置的远程备份服务器。${gl_bai}"
+                return
+            fi
+
+            echo -e "----------------------------------------"
+            echo -e "${gl_kjlan}已配置的远程服务器:${gl_bai}"
+            echo "$configured_servers" | sed 's/^/  /'
+            echo -e "----------------------------------------"
+
+            read -p "请输入要删除备份配置的服务器地址: " server_to_delete
+
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${server_to_delete}.sh"
+            if [ -f "$sync_script_path" ]; then
+                echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
+                read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
+                if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
+                    # 删除定时任务
+                    ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
+                    # 删除脚本文件
+                    rm -f "${sync_script_path}"
+                    echo -e "${gl_lv}✅ 备份配置已成功删除。${gl_bai}"
+                else
+                    echo -e "${gl_huang}操作已取消。${gl_bai}"
+                fi
+            else
+                echo -e "${gl_hong}错误：未找到服务器 ${server_to_delete} 的备份配置。${gl_bai}"
+            fi
+        }
+
+        function run_memos_sync() {
+            clear; echo -e "${gl_kjlan}立即执行 Memos 备份...${gl_bai}"
+            echo -e "----------------------------------------"
+            local configured_scripts=""
+            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                configured_scripts=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null)
+            fi
+
+            if [ -z "$configured_scripts" ]; then
+                echo -e "${gl_huang}未找到任何已配置的远程备份服务器。请先添加备份配置。${gl_bai}"
+                return
+            fi
+            
+            local total_backups=$(echo "$configured_scripts" | wc -l)
+            local backup_count=0
+            
+            echo -e "${gl_lan}正在对所有已配置的远程服务器执行备份...${gl_bai}\n"
+            
+            for script_name in $configured_scripts; do
+                local sync_script_path="${SYNC_SCRIPT_BASE}/${script_name}"
+                # 从脚本文件名中提取服务器地址
+                local server_address=$(echo "$script_name" | sed 's/sync_memos_//g;s/.sh//g')
+                
+                # 从 crontab 中查找对应的配置行来提取参数
+                local cron_line=$(crontab -l 2>/dev/null | grep "$sync_script_path")
+                local remote_host=$(echo "$cron_line" | awk '{print $7}')
+                local remote_port=$(echo "$cron_line" | awk '{print $8}')
+                local remote_user=$(echo "$cron_line" | awk '{print $9}')
+                local local_dir=$(echo "$cron_line" | awk '{print $10}')
+                local remote_dir=$(echo "$cron_line" | awk '{print $11}')
+
+                if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$local_dir" ] || [ -z "$remote_dir" ]; then
+                    echo -e "${gl_hong}错误：未能从定时任务中解析出完整的备份参数。请重新配置。${gl_bai}"
+                    continue
+                fi
+
+                backup_count=$((backup_count + 1))
+                echo -e "▶️  (${backup_count}/${total_backups}) 正在备份到服务器: ${gl_lv}${server_address}${gl_bai}"
+                
+                # 显式传递参数给子脚本
+                bash "$sync_script_path" "$remote_host" "$remote_port" "$remote_user" "$local_dir" "$remote_dir"
+                
+                if [ $? -eq 0 ]; then
+                    echo -e "✅ 备份任务执行完毕。\n"
+                else
+                    echo -e "${gl_hong}❌ 备份任务执行失败。\n"
+                fi
+            done
+        }
+
+        function view_memos_sync_log() {
+            clear
+            echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
+            echo -e "----------------------------------------"
+            if [ -f "${LOG_FILE}" ]; then
+                tail -n 50 "${LOG_FILE}"
+            else
+                echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
+            fi
+            echo -e "----------------------------------------"
+        }
+
+        while true; do
+            clear
+            echo "Memos 管理"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' &>/dev/null)
+            local memos_installed_color
+            if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
+
+            echo -e "${memos_installed_color}1.    安装 Memos${gl_bai}"
+            echo -e "${gl_kjlan}2.    配置自动备份"
+            echo -e "${gl_kjlan}3.    查看备份日志"
+            echo -e "${memos_installed_color}4.    卸载 Memos${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " memos_choice
+            case $memos_choice in
+                1) install_memos; press_any_key_to_continue ;;
+                2)
+                    while true; do
+                        clear
+                        echo "Memos 自动备份管理"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "已配置的远程服务器:"
+                        local configured_servers=""
+                        if [ -d "${SYNC_SCRIPT_BASE}" ]; then
+                            configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+                        fi
+                        if [ -z "$configured_servers" ]; then
+                            echo -e "  ${gl_hui}无${gl_bai}"
+                        else
+                            echo "$configured_servers" | sed 's/^/  /'
+                        fi
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "1. 添加备份配置"
+                        echo "2. 删除备份配置"
+                        echo "3. 立即备份所有"
+                        echo "4. 查看备份日志"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        echo "0. 返回上一级菜单"
+                        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                        read -p "请输入你的选择: " sync_choice
+                        case $sync_choice in
+                            1) setup_memos_sync; press_any_key_to_continue ;;
+                            2) delete_memos_sync; press_any_key_to_continue ;;
+                            3) run_memos_sync; press_any_key_to_continue ;;
+                            4) view_memos_sync_log; press_any_key_to_continue ;;
+                            0) break ;;
+                            *) echo "无效输入"; sleep 1 ;;
+                        esac
+                    done
+                    ;;
+                3) view_memos_sync_log; press_any_key_to_continue ;;
+                4) uninstall_memos; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+
+    function watchtower_management() {
+        local wt_installed_flag=$(docker ps -a --filter "name=^watchtower$" --format "{{.Names}}" | grep -q 'watchtower' &>/dev/null)
+        local wt_installed_color="${gl_bai}"
+        if [ "$wt_installed_flag" == "true" ]; then wt_installed_color="${gl_lv}"; fi
+        local wt_status="${gl_hong}未安装${gl_bai}"
+        if [ "$wt_installed_flag" == "true" ]; then wt_status="${gl_lv}已安装${gl_bai}"; fi
+        
+        local monitored_containers=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        local all_containers=$(docker ps --format "{{.Names}}")
+        local unmonitored_containers=$(comm -23 <(echo "$all_containers" | sort) <(echo "$monitored_containers" | sort))
+
+        while true; do
+            clear
+            echo -e "${gl_kjlan}Watchtower 管理${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo "安装状态:"
+            echo -e "  - ${wt_status}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            
+            if [ "$wt_installed_flag" == "true" ]; then
+                echo "已监控的镜像:"
+                if [ -n "$monitored_containers" ]; then
+                    echo "$monitored_containers" | sed "s/^/  ${gl_lv}- /"
+                else
+                    echo "  ${gl_hui}- 无${gl_bai}"
+                fi
+                echo
+                echo "未监控的镜像:"
+                if [ -n "$unmonitored_containers" ]; then
+                    echo "$unmonitored_containers" | sed "s/^/  ${gl_bai}- /"
+                else
+                    echo "  ${gl_hui}- 无${gl_bai}"
+                fi
+                echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                echo -e "${gl_kjlan}1.    ${gl_bai}重新安装 Watchtower"
+                echo -e "${gl_kjlan}2.    ${gl_bai}新增添加监控镜像"
+                echo -e "${gl_kjlan}3.    ${gl_bai}删除监控镜像"
+            else
+                echo -e "${gl_kjlan}1.    ${gl_bai}安装 Watchtower"
+            fi
+            
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " wt_choice
+            case $wt_choice in
+                1) install_watchtower; press_any_key_to_continue ;;
+                2) add_watchtower_image; press_any_key_to_continue ;;
+                3) remove_watchtower_image; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
+
+    function add_watchtower_image() {
+        clear
+        echo -e "${gl_kjlan}添加 Watchtower 监控镜像${gl_bai}"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        
+        local current_monitored=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        local all_containers=$(docker ps --format "{{.Names}}")
+        local unmonitored_containers=$(comm -23 <(echo "$all_containers" | sort) <(echo "$current_monitored" | sort))
+
+        if [ -z "$unmonitored_containers" ]; then
+            echo -e "${gl_lv}所有正在运行的容器都已在监控列表中。${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_kjlan}以下是当前未监控的容器:${gl_bai}"
+        echo "$unmonitored_containers" | sed "s/^/  ${gl_bai}- /"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+
+        read -p "请输入要添加监控的容器名称（多个请用空格分隔）: " containers_to_add
+        
+        if [ -z "$containers_to_add" ]; then
+            echo -e "${gl_huang}未输入容器名称，操作已取消。${gl_bai}"
+            return
+        fi
+
+        # 构建新的监控列表
+        local new_monitored_list=$(echo "$current_monitored $containers_to_add" | tr ' ' '\n' | sort -u)
+        
+        # 停止并重新启动 Watchtower 容器
+        echo -e "${gl_lan}正在停止并重新配置 Watchtower...${gl_bai}"
+        local schedule_args=$(docker inspect watchtower --format='{{range .Args}}{{if eq . "containrrr/watchtower"}}{{.}}{{else if not (or (hasPrefix . "--") (eq . "--all"))}}{{else}}{{.}} {{end}}{{end}}')
+        docker stop watchtower >/dev/null
+        docker rm watchtower >/dev/null
+        
+        docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule_args $new_monitored_list
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${gl_lv}✅ 成功添加监控镜像并重启 Watchtower。${gl_bai}"
+        else
+            echo -e "${gl_hong}❌ 添加监控镜像失败，请检查容器名称。${gl_bai}"
+        fi
+    }
+
+    function remove_watchtower_image() {
+        clear
+        echo -e "${gl_kjlan}删除 Watchtower 监控镜像${gl_bai}"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        
+        local monitored_containers=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        
+        if [ -z "$monitored_containers" ]; then
+            echo -e "${gl_huang}当前没有正在监控的镜像。${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_kjlan}以下是当前正在监控的容器:${gl_bai}"
+        echo "$monitored_containers" | sed "s/^/  ${gl_lv}- /"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        
+        read -p "请输入要删除监控的容器名称（多个请用空格分隔）: " containers_to_remove
+        
+        if [ -z "$containers_to_remove" ]; then
+            echo -e "${gl_huang}未输入容器名称，操作已取消。${gl_bai}"
+            return
+        fi
+
+        # 构建新的监控列表
+        local new_monitored_list=""
+        local removed_count=0
+        for container in $monitored_containers; do
+            local found_match="false"
+            for removed_container in $containers_to_remove; do
+                if [ "$container" == "$removed_container" ]; then
+                    found_match="true"
+                    removed_count=$((removed_count + 1))
+                    break
+                fi
+            done
+            if [ "$found_match" == "false" ]; then
+                new_monitored_list+="$container "
+            fi
+        done
+        
+        if [ "$removed_count" -eq 0 ]; then
+            echo -e "${gl_huang}未找到匹配的容器名称，操作已取消。${gl_bai}"
+            return
+        fi
+
+        # 停止并重新启动 Watchtower 容器
+        echo -e "${gl_lan}正在停止并重新配置 Watchtower...${gl_bai}"
+        local schedule_args=$(docker inspect watchtower --format='{{range .Args}}{{if eq . "containrrr/watchtower"}}{{.}}{{else if not (or (hasPrefix . "--") (eq . "--all"))}}{{else}}{{.}} {{end}}{{end}}')
+        docker stop watchtower >/dev/null
+        docker rm watchtower >/dev/null
+        
+        docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule_args $new_monitored_list
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${gl_lv}✅ 成功删除监控镜像并重启 Watchtower。${gl_bai}"
+        else
+            echo -e "${gl_hong}❌ 删除监控镜像失败，请检查容器名称。${gl_bai}"
         fi
     }
 
@@ -721,126 +1826,164 @@ EOF
         done
     }
 
-    function install_watchtower() {
-        clear
-        echo -e "${gl_kjlan}正在安装 Watchtower...${gl_bai}";
-        if ! command -v docker &>/dev/null; then echo -e "${gl_hong}错误：Docker 未安装。${gl_bai}"; return; fi
-
-        if docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; then
-            echo -e "\n${gl_huang}Watchtower 容器已存在，无需重复安装。${gl_bai}"
-            return
-        fi
-
-        echo -e "${gl_lan}正在拉取 Watchtower 镜像...${gl_bai}"; docker pull containrrr/watchtower
-
-        echo ""
-        echo -e "请选择更新频率："
-        echo "1) 每小时 (每 60 分钟)"
-        echo "2) 每天 (每天一次，默认)"
-        echo "3) 每周 (每周一次)"
-        echo "4) 每月 (每月一次)"
-        read -p "请输入您的选择 (1-4, 默认: 2): " freq_choice
-
-        case "$freq_choice" in
-            1) schedule="--interval 3600"; schedule_desc="每小时";;
-            3) schedule="--schedule \"0 0 * * 0\""; schedule_desc="每周";;
-            4) schedule="--schedule \"0 0 0 1 * *\""; schedule_desc="每月";;
-            *) schedule="--interval 86400"; schedule_desc="每天";;
-        esac
-
-        echo -e "\n${gl_lan}当前正在运行的容器有：${gl_bai}"
-        docker ps --format "{{.Names}}" | sed 's/^/  /'
-        echo -e "\n${gl_huang}提示: ${gl_bai}若监控所有容器，请直接回车。"
-        read -p "请输入您要 Watchtower 监控的镜像名称（多个镜像请用空格分隔，默认: all）：" images
-        if [ -z "$images" ]; then
-            images="--all"
-        fi
-
-        local watchtower_cmd="docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule $images"
-
-        echo -e "\n${gl_lan}正在运行 Watchtower 容器...${gl_bai}";
-        eval "$watchtower_cmd"
-
-        sleep 5
-        if docker ps -q -f name=^watchtower$; then
-            echo -e "\n${gl_lv}Watchtower 安装成功！${gl_bai}"
-            echo -e "-----------------------------------"
-            echo -e "配置信息:"
-            echo -e "  容器名称:    ${gl_lv}watchtower${gl_bai}"
-            echo -e "  更新频率:    ${gl_lv}${schedule_desc}${gl_bai}"
-            echo -e "  监控镜像:    ${gl_lv}${images}${gl_bai}"
-            echo -e "-----------------------------------"
-            echo -e "您可以随时使用 ${gl_lv}docker logs watchtower${gl_bai} 查看日志。"
-        else
-            echo -e "${gl_hong}Watchtower 容器启动失败，请检查 Docker 日志。${gl_bai}"
-        fi
-    }
-
-    function uninstall_watchtower() {
-        clear
-        echo -e "${gl_kjlan}正在卸载 Watchtower...${gl_bai}"
-        if ! docker ps -a --format '{{.Names}}' | grep -q "^watchtower$"; then
-            echo -e "${gl_huang}未找到 Watchtower 容器，无需卸载。${gl_bai}"
-            return
-        fi
-
-        echo -e "${gl_hong}警告：此操作将永久删除 Watchtower 容器和镜像！${gl_bai}"
-        read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
-        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
-            echo -e "${gl_lan}正在停止并删除 watchtower 容器...${gl_bai}"
-            docker stop watchtower && docker rm watchtower
-
-            echo -e "${gl_lan}正在删除 watchtower 镜像...${gl_bai}"
-            docker rmi containrrr/watchtower
-
-            echo -e "${gl_lv}✅ Watchtower 已被彻底卸载。${gl_bai}"
-        else
-            echo -e "${gl_huang}操作已取消。${gl_bai}"
-        fi
-    }
-
-    function uninstall_filebrowser() {
-        clear; echo -e "${gl_kjlan}正在卸载 FileBrowser...${gl_bai}"
-        if ! docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$"; then
-            echo -e "${gl_huang}未找到 FileBrowser 容器，无需卸载。${gl_bai}"; return;
-        fi
+    function watchtower_management() {
+        local wt_installed_flag=$(docker ps -a --filter "name=^watchtower$" --format "{{.Names}}" | grep -q 'watchtower' &>/dev/null)
+        local wt_installed_color="${gl_bai}"
+        if [ "$wt_installed_flag" == "true" ]; then wt_installed_color="${gl_lv}"; fi
+        local wt_status="${gl_hong}未安装${gl_bai}"
+        if [ "$wt_installed_flag" == "true" ]; then wt_status="${gl_lv}已安装${gl_bai}"; fi
         
-        echo -e "${gl_hong}警告：此操作将永久删除 FileBrowser 容器、镜像以及所有相关数据！${gl_bai}"
-        echo -e "${gl_hong}数据目录包括: /wliuy/filebrowser${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
-        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
-            echo -e "${gl_lan}正在停止并删除 filebrowser 容器...${gl_bai}"
-            docker stop filebrowser && docker rm filebrowser
+        local monitored_containers=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        local all_containers=$(docker ps --format "{{.Names}}")
+        local unmonitored_containers=$(comm -23 <(echo "$all_containers" | sort) <(echo "$monitored_containers" | sort))
 
-            echo -e "${gl_lan}正在删除 filebrowser/filebrowser 镜像...${gl_bai}"
-            docker rmi filebrowser/filebrowser
+        while true; do
+            clear
+            echo -e "${gl_kjlan}Watchtower 管理${gl_bai}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo "安装状态:"
+            echo -e "  - ${wt_status}"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            
+            if [ "$wt_installed_flag" == "true" ]; then
+                echo "已监控的镜像:"
+                if [ -n "$monitored_containers" ]; then
+                    echo "$monitored_containers" | sed "s/^/  ${gl_lv}- /"
+                else
+                    echo "  ${gl_hui}- 无${gl_bai}"
+                fi
+                echo
+                echo "未监控的镜像:"
+                if [ -n "$unmonitored_containers" ]; then
+                    echo "$unmonitored_containers" | sed "s/^/  ${gl_bai}- /"
+                else
+                    echo "  ${gl_hui}- 无${gl_bai}"
+                fi
+                echo -e "${gl_hong}----------------------------------------${gl_bai}"
+                echo -e "${gl_kjlan}1.    ${gl_bai}重新安装 Watchtower"
+                echo -e "${gl_kjlan}2.    ${gl_bai}新增添加监控镜像"
+                echo -e "${gl_kjlan}3.    ${gl_bai}删除监控镜像"
+            else
+                echo -e "${gl_kjlan}1.    ${gl_bai}安装 Watchtower"
+            fi
+            
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            read -p "请输入你的选择: " wt_choice
+            case $wt_choice in
+                1) install_watchtower; press_any_key_to_continue ;;
+                2) add_watchtower_image; press_any_key_to_continue ;;
+                3) remove_watchtower_image; press_any_key_to_continue ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
+            esac
+        done
+    }
 
-            echo -e "${gl_lan}正在删除本地数据目录 /wliuy/filebrowser...${gl_bai}"
-            rm -rf /wliuy/filebrowser
+    function add_watchtower_image() {
+        clear
+        echo -e "${gl_kjlan}添加 Watchtower 监控镜像${gl_bai}"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        
+        local current_monitored=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        local all_containers=$(docker ps --format "{{.Names}}")
+        local unmonitored_containers=$(comm -23 <(echo "$all_containers" | sort) <(echo "$current_monitored" | sort))
 
-            echo -e "${gl_lv}✅ FileBrowser 已被彻底卸载。${gl_bai}"
+        if [ -z "$unmonitored_containers" ]; then
+            echo -e "${gl_lv}所有正在运行的容器都已在监控列表中。${gl_bai}"
+            return
+        fi
+
+        echo -e "${gl_kjlan}以下是当前未监控的容器:${gl_bai}"
+        echo "$unmonitored_containers" | sed "s/^/  ${gl_bai}- /"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+
+        read -p "请输入要添加监控的容器名称（多个请用空格分隔）: " containers_to_add
+        
+        if [ -z "$containers_to_add" ]; then
+            echo -e "${gl_huang}未输入容器名称，操作已取消。${gl_bai}"
+            return
+        fi
+
+        # 构建新的监控列表
+        local new_monitored_list=$(echo "$current_monitored $containers_to_add" | tr ' ' '\n' | sort -u)
+        
+        # 停止并重新启动 Watchtower 容器
+        echo -e "${gl_lan}正在停止并重新配置 Watchtower...${gl_bai}"
+        local schedule_args=$(docker inspect watchtower --format='{{range .Args}}{{if eq . "containrrr/watchtower"}}{{.}}{{else if not (or (hasPrefix . "--") (eq . "--all"))}}{{else}}{{.}} {{end}}{{end}}')
+        docker stop watchtower >/dev/null
+        docker rm watchtower >/dev/null
+        
+        docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule_args $new_monitored_list
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${gl_lv}✅ 成功添加监控镜像并重启 Watchtower。${gl_bai}"
         else
-            echo -e "${gl_huang}操作已取消。${gl_bai}"
+            echo -e "${gl_hong}❌ 添加监控镜像失败，请检查容器名称。${gl_bai}"
         fi
     }
 
-    function uninstall_lucky() {
-        clear; echo -e "${gl_kjlan}正在卸载 Lucky 反代...${gl_bai}"
-        if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
-            echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return;
+    function remove_watchtower_image() {
+        clear
+        echo -e "${gl_kjlan}删除 Watchtower 监控镜像${gl_bai}"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        
+        local monitored_containers=$(docker inspect watchtower --format='{{.Args}}' 2>/dev/null | grep -oP '(?<=")\S+(?=")' | grep -v 'containrrr/watchtower')
+        
+        if [ -z "$monitored_containers" ]; then
+            echo -e "${gl_huang}当前没有正在监控的镜像。${gl_bai}"
+            return
         fi
-        echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
-        read -p "如确认继续，请输入 'y' 或 '1': " confirm
-        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
-            echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
-            echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
-            echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
-            echo -e "${gl_lv}✅ Lucky 已被彻底卸载。${gl_bai}"
+
+        echo -e "${gl_kjlan}以下是当前正在监控的容器:${gl_bai}"
+        echo "$monitored_containers" | sed "s/^/  ${gl_lv}- /"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        
+        read -p "请输入要删除监控的容器名称（多个请用空格分隔）: " containers_to_remove
+        
+        if [ -z "$containers_to_remove" ]; then
+            echo -e "${gl_huang}未输入容器名称，操作已取消。${gl_bai}"
+            return
+        fi
+
+        # 构建新的监控列表
+        local new_monitored_list=""
+        local removed_count=0
+        for container in $monitored_containers; do
+            local found_match="false"
+            for removed_container in $containers_to_remove; do
+                if [ "$container" == "$removed_container" ]; then
+                    found_match="true"
+                    removed_count=$((removed_count + 1))
+                    break
+                fi
+            done
+            if [ "$found_match" == "false" ]; then
+                new_monitored_list+="$container "
+            fi
+        done
+        
+        if [ "$removed_count" -eq 0 ]; then
+            echo -e "${gl_huang}未找到匹配的容器名称，操作已取消。${gl_bai}"
+            return
+        fi
+
+        # 停止并重新启动 Watchtower 容器
+        echo -e "${gl_lan}正在停止并重新配置 Watchtower...${gl_bai}"
+        local schedule_args=$(docker inspect watchtower --format='{{range .Args}}{{if eq . "containrrr/watchtower"}}{{.}}{{else if not (or (hasPrefix . "--") (eq . "--all"))}}{{else}}{{.}} {{end}}{{end}}')
+        docker stop watchtower >/dev/null
+        docker rm watchtower >/dev/null
+        
+        docker run -d --name watchtower --restart unless-stopped -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower $schedule_args $new_monitored_list
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${gl_lv}✅ 成功删除监控镜像并重启 Watchtower。${gl_bai}"
         else
-            echo -e "${gl_huang}操作已取消。${gl_bai}"
+            echo -e "${gl_hong}❌ 删除监控镜像失败，请检查容器名称。${gl_bai}"
         fi
     }
-    
+
     while true; do
         clear
         echo -e "应用管理"
@@ -853,10 +1996,10 @@ EOF
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  $(get_app_color 'lucky')-1.   卸载 Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')-2.   卸载 FileBrowser${gl_bai}"
-        echo -e "  $(get_app_color 'memos')-3.   卸载 Memos${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')-4.   卸载 Watchtower${gl_bai}"
+        echo -e "  -1.   卸载 $(get_app_color 'lucky')Lucky 反代${gl_bai}"
+        echo -e "  -2.   卸载 $(get_app_color 'filebrowser')FileBrowser${gl_bai}"
+        echo -e "  -3.   卸载 $(get_app_color 'memos')Memos${gl_bai}"
+        echo -e "  -4.   卸载 $(get_app_color 'watchtower')Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "0.    返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
