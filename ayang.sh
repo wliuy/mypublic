@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.4.7 (修复应用管理颜色标记问题)
+# AYANG's Toolbox v1.4.8 (修复应用管理颜色标记问题)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.4.7"
+readonly SCRIPT_VERSION="1.4.8"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -275,22 +275,22 @@ function system_tools() {
 # 5. 应用管理
 function app_management() {
     # 动态获取应用状态并设置颜色
-    local lucky_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$")
-    local fb_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$")
-    local memos_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$")
-    local wt_installed=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$")
+    local lucky_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^lucky$")
+    local fb_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^filebrowser$")
+    local memos_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^memos$")
+    local wt_installed_flag=$(docker ps -a --format '{{.Names}}' | grep -q "^watchtower$")
 
     local lucky_color
-    [[ $lucky_installed ]] && lucky_color="${gl_lv}" || lucky_color="${gl_bai}"
+    if [ "$lucky_installed_flag" ]; then lucky_color="${gl_lv}"; else lucky_color="${gl_bai}"; fi
     
     local fb_color
-    [[ $fb_installed ]] && fb_color="${gl_lv}" || fb_color="${gl_bai}"
+    if [ "$fb_installed_flag" ]; then fb_color="${gl_lv}"; else fb_color="${gl_bai}"; fi
     
     local memos_color
-    [[ $memos_installed ]] && memos_color="${gl_lv}" || memos_color="${gl_bai}"
+    if [ "$memos_installed_flag" ]; then memos_color="${gl_lv}"; else memos_color="${gl_bai}"; fi
     
     local wt_color
-    [[ $wt_installed ]] && wt_color="${gl_lv}" || wt_color="${gl_bai}"
+    if [ "$wt_installed_flag" ]; then wt_color="${gl_lv}"; else wt_color="${gl_bai}"; fi
 
 
     function install_lucky() {
@@ -824,7 +824,9 @@ EOF
 
     function uninstall_lucky() {
         clear; echo -e "${gl_kjlan}正在卸载 Lucky 反代...${gl_bai}"
-        if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return; fi
+        if ! docker ps -a --format '{{.Names}}' | grep -q "^lucky$"; then
+            echo -e "${gl_huang}未找到 Lucky 容器，无需卸载。${gl_bai}"; return;
+        fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
         read -p "如确认继续，请输入 'y' 或 '1': " confirm
         if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
