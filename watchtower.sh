@@ -24,15 +24,28 @@ get_watchtower_info() {
 
     if is_watchtower_running; then
         # 从容器命令中提取所有参数
-        full_command=$(docker inspect --format '{{.Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | tr -d '[]' | tr ',' ' ' | xargs)
+        read -a cmd_array <<< $(docker inspect --format '{{json .Config.Cmd}}' $WATCHTOWER_CONTAINER_NAME | sed 's/[[",]]/ /g')
 
-        # 找到 --interval 参数及其值
-        if echo "$full_command" | grep -q -- --interval; then
-            current_interval=$(echo "$full_command" | sed -E 's/.*--interval ([0-9]+).*/\1/')
-        fi
+        monitored_images_array=()
+        skip_next=false
+        
+        # 遍历命令数组，找出镜像名称
+        for arg in "${cmd_array[@]}"; do
+            if [[ "$skip_next" = true ]]; then
+                skip_next=false
+                continue
+            fi
 
-        # 提取镜像名称，排除所有选项和值
-        monitored_images=$(echo "$full_command" | sed -E 's/--[^ ]+ [^ ]+//g' | sed -E 's/^[[:space:]]+//' | sed -E 's/[[:space:]]+$//')
+            if [[ "$arg" == "--interval" ]]; then
+                current_interval="${cmd_array[i+1]}"
+                skip_next=true
+            elif [[ "$arg" == "containrrr/watchtower" ]]; then
+                continue
+            else
+                monitored_images_array+=("$arg")
+            fi
+        done
+        monitored_images="${monitored_images_array[*]}"
     fi
 
     # 获取所有正在运行的容器镜像，排除 Watchtower 自身
@@ -43,14 +56,12 @@ get_watchtower_info() {
     if [[ -n "$all_running_images" ]]; then
         for img in $all_running_images; do
             is_monitored=false
-            if [[ -n "$monitored_images" ]]; then
-                for m_img in $monitored_images; do
-                    if [[ "$img" == "$m_img" ]]; then
-                        is_monitored=true
-                        break
-                    fi
-                done
-            fi
+            for m_img in $monitored_images; do
+                if [[ "$img" == "$m_img" ]]; then
+                    is_monitored=true
+                    break
+                fi
+            done
             if [[ "$is_monitored" == false ]]; then
                 unmonitored_images+="$img "
             fi
