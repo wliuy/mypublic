@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.6.2 (美化定时文件夹备份菜单)
+# AYANG's Toolbox v1.6.3 (界面美化和逻辑优化)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.6.2"
+readonly SCRIPT_VERSION="1.6.3"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -397,7 +397,7 @@ function system_tools() {
             echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
 
             read -p "$(echo -e "${gl_huang}请确认信息无误，是否继续？ (y/N): ${gl_bai}")" confirm
-            if [[ ! "${confirm,,}" =~ ^(y|yes)$ ]]; then
+            if [[ ! "${confirm,,}" =~ ^(y|yes|1)$ ]]; then
                 echo -e "${gl_hong}操作已取消。${gl_bai}"
                 press_any_key_to_continue
                 return
@@ -556,7 +556,7 @@ EOF
                 echo -e "${gl_hong}警告：此操作将永久删除脚本和定时任务。${gl_bai}"
                 read -p "$(echo -e "确定要删除任务 ${gl_hong}${script_to_delete}${gl_bai} 吗？ (y/N): ")" confirm
                 
-                if [[ "${confirm,,}" =~ ^(y|yes)$ ]]; then
+                if [[ "${confirm,,}" =~ ^(y|yes|1)$ ]]; then
                     sudo rm -f "$script_to_delete"
                     ( sudo crontab -l 2>/dev/null | grep -v "$script_to_delete" ) | sudo crontab -
                     echo -e "\n${gl_lv}✅ 任务已成功删除。${gl_bai}"
@@ -588,9 +588,9 @@ EOF
         # --- 主菜单 ---
         while true; do
             clear
-            echo -e "${gl_bai}========================================="
-            echo -e "      文件同步管理工具"
-            echo -e "=========================================${gl_bai}"
+            echo -e "${gl_kjlan}========================================="
+            echo -e "${gl_bai}      文件同步管理工具"
+            echo -e "${gl_kjlan}=========================================${gl_bai}"
             echo -e "${gl_lv}1.    ${gl_bai}查看已添加的同步任务"
             echo -e "${gl_lv}2.    ${gl_bai}添加新的同步任务"
             echo -e "${gl_lv}3.    ${gl_bai}立即执行同步任务"
@@ -1110,7 +1110,6 @@ function app_management() {
 
             echo -e "${gl_hong}警告：此操作将永久删除 Memos 容器、镜像以及所有相关数据！${gl_bai}"
             echo -e "${gl_hong}数据目录包括: ${MEMOS_DATA_DIR}${gl_bai}"
-            echo -e "${gl_hong}同步脚本和日志也将被删除。${gl_bai}"
             read -p "如确认继续，请输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
             if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
                 echo -e "${gl_lan}正在停止并删除 memos 容器...${gl_bai}"
@@ -1178,20 +1177,17 @@ function app_management() {
             fi
 
             # 配置 SSH 免密登录
-            echo -e "🔗 配置 SSH 免密登录（端口 $remote_port）..."
             sshpass -p "$remote_pass" ssh-copy-id -p "$remote_port" -o StrictHostKeyChecking=no "${remote_user}@${remote_host}" &>/dev/null
-            
-            # 测试 SSH 连接
-            echo -e "✅ 测试免密登录..."
-            if ssh -p "$remote_port" -o BatchMode=yes "${remote_user}@${remote_host}" 'echo 连接成功' &>/dev/null; then
-                echo -e "✅ SSH 免密登录配置成功！"
+
+            if [ $? -eq 0 ]; then
+                echo -e "  ✅ SSH 免密登录配置成功！"
             else
-                echo -e "❌ SSH 免密登录失败，请检查端口、防火墙或密码。"
-                return 1
+                echo -e "  ${gl_hong}❌ SSH 免密登录配置失败。请检查密码或SSH配置。${gl_bai}"
+                press_any_key_to_continue
+                return
             fi
 
             # 创建同步脚本
-            echo -e "📝 创建同步脚本 ${SYNC_SCRIPT_BASE}..."
             mkdir -p "${SYNC_SCRIPT_BASE}"
             local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${remote_host}.sh"
             
