@@ -202,15 +202,15 @@ function system_tools() {
         while true; do
             clear; echo "设置虚拟内存";
             local swap_info=$(free -m | awk 'NR==3{used=$3; total=$2; if (total == 0) {percentage=0} else {percentage=used*100/total}; printf "%dM/%dM (%d%%)", used, total, percentage}')
-            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M         2. 分配2048M"; echo "3. 分配4096M         4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M       2. 分配2048M"; echo "3. 分配4096M        4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " swap_choice
             case "$swap_choice" in
-              1) _do_add_swap 1024; break ;;
-              2) _do_add_swap 2048; break ;;
-              3) _do_add_swap 4096; break ;;
-              4) read -p "请输入虚拟内存大小（单位M）: " new_swap; _do_add_swap "$new_swap"; break ;;
-              0) break ;;
-              *) echo "无效输入"; sleep 1 ;;
+                1) _do_add_swap 1024; break ;;
+                2) _do_add_swap 2048; break ;;
+                3) _do_add_swap 4096; break ;;
+                4) read -p "请输入虚拟内存大小（单位M）: " new_swap; _do_add_swap "$new_swap"; break ;;
+                0) break ;;
+                *) echo "无效输入"; sleep 1 ;;
             esac
         done
     }
@@ -222,7 +222,7 @@ function system_tools() {
             if grep -q 'Alpine' /etc/issue 2>/dev/null; then install tzdata; cp /usr/share/zoneinfo/${1} /etc/localtime; else timedatectl set-timezone ${1}; fi
         }
         while true; do
-            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间         2.  中国香港时间"; echo "3.  日本东京时间         4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间         12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间         22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
+            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间        2.  中国香港时间"; echo "3.  日本东京时间        4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间        12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间        22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) _set_timedate Asia/Shanghai ;;
@@ -268,11 +268,11 @@ function system_tools() {
             echo "当前定时任务列表："
             crontab -l 2>/dev/null || echo "（无任务）"
             echo -e "${gl_hong}------------------------${gl_bai}"
-            echo -e "${gl_lv}1.    ${gl_bai}添加定时任务"
-            echo -e "${gl_lv}2.    ${gl_bai}删除定时任务"
-            echo -e "${gl_lv}3.    ${gl_bai}编辑定时任务"
+            echo -e "${gl_lv}1.     ${gl_bai}添加定时任务"
+            echo -e "${gl_lv}2.     ${gl_bai}删除定时任务"
+            echo -e "${gl_lv}3.     ${gl_bai}编辑定时任务"
             echo -e "${gl_hong}------------------------${gl_bai}"
-            echo -e "${gl_hong}0.    ${gl_bai}返回上一级选单"
+            echo -e "${gl_hong}0.     ${gl_bai}返回上一级选单"
             echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " cron_choice
 
@@ -373,7 +373,7 @@ function system_tools() {
             CRON_HOUR=${CRON_HOUR:-0}
 
             echo -e "${gl_kjlan}----------------------------------------"
-            echo -e "              确认信息"
+            echo -e "         确认信息"
             echo -e "----------------------------------------${gl_bai}"
             echo -e "${gl_kjlan}本地源目录: ${gl_bai}${SOURCE_DIR}"
             echo -e "${gl_kjlan}远程目标:  ${gl_bai}${REMOTE_USER}@${REMOTE_HOST}:${DEST_DIR}"
@@ -470,11 +470,11 @@ EOF
                 fi
                 
                 echo -e "${gl_lv}--- 任务 ${i} ---${gl_bai}"
-                echo -e "${gl_kjlan}命名:   ${gl_bai}$(basename "${script}")"
-                echo -e "${gl_kjlan}文件:   ${gl_bai}${script}"
-                echo -e "${gl_kjlan}来源:   ${gl_bai}${source_dir}"
-                echo -e "${gl_kjlan}目标:   ${gl_bai}${remote_info}"
-                echo -e "${gl_kjlan}频率:   ${gl_bai}每天 ${cron_time}"
+                echo -e "${gl_kjlan}命名:    ${gl_bai}$(basename "${script}")"
+                echo -e "${gl_kjlan}文件:    ${gl_bai}${script}"
+                echo -e "${gl_kjlan}来源:    ${gl_bai}${source_dir}"
+                echo -e "${gl_kjlan}目标:    ${gl_bai}${remote_info}"
+                echo -e "${gl_kjlan}频率:    ${gl_bai}每天 ${cron_time}"
                 echo -e "----------------------------------------"
                 i=$((i+1))
             done
@@ -574,15 +574,15 @@ EOF
         while true; do
             clear
             echo -e "${gl_kjlan}========================================="
-            echo -e "${gl_bai}      文件同步管理工具"
+            echo -e "${gl_bai}       文件同步管理工具"
             echo -e "${gl_kjlan}=========================================${gl_bai}"
-            echo -e "${gl_lv}1.    ${gl_bai}查看已添加的同步任务"
-            echo -e "${gl_lv}2.    ${gl_bai}添加新的同步任务"
-            echo -e "${gl_lv}3.    ${gl_bai}立即执行同步任务"
-            echo -e "${gl_lv}4.    ${gl_bai}删除同步任务"
-            echo -e "${gl_lv}5.    ${gl_bai}查看同步日志"
+            echo -e "${gl_lv}1.     ${gl_bai}查看已添加的同步任务"
+            echo -e "${gl_lv}2.     ${gl_bai}添加新的同步任务"
+            echo -e "${gl_lv}3.     ${gl_bai}立即执行同步任务"
+            echo -e "${gl_lv}4.     ${gl_bai}删除同步任务"
+            echo -e "${gl_lv}5.     ${gl_bai}查看同步日志"
             echo -e "-----------------------------------------"
-            echo -e "${gl_hong}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}0.     ${gl_bai}返回上一级菜单"
             echo -e "-----------------------------------------"
 
             read -p "$(echo -e "${gl_kjlan}请输入你的选择: ${gl_bai}")" choice
@@ -599,7 +599,7 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.    ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.    修改登录密码"; echo -e "${gl_lv}3${gl_bai}.    开放所有端口"; echo -e "${gl_lv}4${gl_bai}.    修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.    优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.    查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.    修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.    系统时区调整"; echo -e "${gl_lv}9${gl_bai}.    定时任务管理"; echo -e "${gl_lv}10${gl_bai}.   定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.    返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.     ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.     修改登录密码"; echo -e "${gl_lv}3${gl_bai}.     开放所有端口"; echo -e "${gl_lv}4${gl_bai}.     修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.     优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.     查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.     修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.     系统时区调整"; echo -e "${gl_lv}9${gl_bai}.     定时任务管理"; echo -e "${gl_lv}10${gl_bai}.     定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.     返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -787,16 +787,16 @@ function app_management() {
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             
             if does_watchtower_exist; then
-                echo -e "${gl_lv}1.    ${gl_bai}重新安装/更新配置"
+                echo -e "${gl_lv}1.     ${gl_bai}重新安装/更新配置"
             else
-                echo -e "${gl_lv}1.    ${gl_bai}安装 Watchtower"
+                echo -e "${gl_lv}1.     ${gl_bai}安装 Watchtower"
             fi
-            echo -e "${gl_lv}2.    ${gl_bai}添加监控应用"
-            echo -e "${gl_lv}3.    ${gl_bai}移除监控应用"
-            echo -e "${gl_lv}4.    ${gl_bai}修改监控频率"
-            echo -e "${gl_lv}5.    ${gl_bai}卸载 Watchtower"
+            echo -e "${gl_lv}2.     ${gl_bai}添加监控应用"
+            echo -e "${gl_lv}3.     ${gl_bai}移除监控应用"
+            echo -e "${gl_lv}4.     ${gl_bai}修改监控频率"
+            echo -e "${gl_lv}5.     ${gl_bai}卸载 Watchtower"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            echo -e "${gl_hong}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_hong}0.     ${gl_bai}返回上一级菜单"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " wt_choice
             case $wt_choice in
@@ -1132,37 +1132,44 @@ function app_management() {
             read -p "请输入远程服务器地址 (REMOTE_HOST): " remote_host
             read -p "请输入远程服务器SSH端口 (REMOTE_PORT): " remote_port
             read -p "请输入远程服务器用户名 (REMOTE_USER): " remote_user
-            read -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
-            read -p "请输入本地 Memos 数据目录 (LOCAL_DIR, 默认: /wliuy/memos/): " local_dir
-            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos/): " remote_dir
-            
-            local_dir=${local_dir:-"/wliuy/memos/"}
-            remote_dir=${remote_dir:-"/wliuy/memos/"}
-            
+            read -s -p "请输入远程服务器密码 (REMOTE_PASS): " remote_pass
             echo ""
+            read -p "请输入远程 Memos 数据目录 (REMOTE_DIR, 默认: /wliuy/memos/): " remote_dir
+            read -p "请输入同步频率 (每天的几点，0-23点，如 '0' 表示凌晨0点): " cron_hour
 
-            if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$remote_pass" ]; then
-                echo -e "${gl_hong}输入信息不完整，备份配置已取消。${gl_bai}"
+            local local_dir="${MEMOS_DATA_DIR}"
+            remote_dir=${remote_dir:-"/wliuy/memos/"}
+            cron_hour=${cron_hour:-"0"}
+
+            echo -e "${gl_kjlan}----------------------------------------"
+            echo -e "         确认信息"
+            echo -e "----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}本地源目录: ${gl_bai}${local_dir}"
+            echo -e "${gl_kjlan}远程目标:  ${gl_bai}${remote_user}@${remote_host}:${remote_dir}"
+            echo -e "${gl_kjlan}SSH端口:   ${gl_bai}${remote_port}"
+            echo -e "${gl_kjlan}同步频率:  ${gl_bai}每天 ${cron_hour} 点"
+            echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
+
+            read -p "$(echo -e "${gl_huang}请确认信息无误，是否继续？ (y/N): ${gl_bai}")" confirm
+            if [[ ! "${confirm,,}" =~ ^(y|yes|1)$ ]]; then
+                echo -e "${gl_hong}操作已取消。${gl_bai}"
+                press_any_key_to_continue
                 return
             fi
-            
-            # 检查并安装 sshpass
-            if ! command -v sshpass &> /dev/null; then
-                echo -e "📦 安装 sshpass..."
-                install sshpass
-            else
-                echo -e "📦 sshpass 已安装，跳过安装"
-            fi
-            
-            # 生成 SSH 密钥
-            echo -e "🔐 检查 SSH 密钥..."
+
+            # 检查并安装 sshpass 和 rsync
+            install sshpass rsync
+
+            # 配置 SSH 免密登录
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
             if [ ! -f ~/.ssh/id_rsa ]; then
                 echo -e "🗝️ 生成新的 SSH 密钥..."
                 ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
             fi
-
-            # 配置 SSH 免密登录
-            sshpass -p "$remote_pass" ssh-copy-id -p "$remote_port" -o StrictHostKeyChecking=no "${REMOTE_USER}@${REMOTE_HOST}" &>/dev/null
+            
+            echo -e "\n${gl_lv}▶️ 正在配置 SSH 免密登录...${gl_bai}"
+            sshpass -p "$remote_pass" ssh-copy-id -p "$remote_port" -o StrictHostKeyChecking=no "${remote_user}@${remote_host}" &>/dev/null
 
             if [ $? -eq 0 ]; then
                 echo -e "  ✅ SSH 免密登录配置成功！"
@@ -1174,51 +1181,49 @@ function app_management() {
 
             # 创建同步脚本
             mkdir -p "${SYNC_SCRIPT_BASE}"
-            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${remote_host}.sh"
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_to_${remote_host}.sh"
             
-            cat > "$SCRIPT_FILE" <<EOF
+            cat > "$sync_script_path" <<EOF
 #!/usr/bin/env bash
 # =======================================================
-# 自动同步脚本 (由 ayang.sh 生成)
-# 同步源: ${SOURCE_DIR}
-# 同步目标: ${REMOTE_USER}@${REMOTE_HOST}:${DEST_DIR}
+# Memos 自动备份脚本 (由 ayang.sh 生成)
+# 同步源: ${local_dir}
+# 同步目标: ${remote_user}@${remote_host}:${remote_dir}
 # =======================================================
 # 确保远程目录存在
-ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p '${DEST_DIR}'"
+ssh -p ${remote_port} ${remote_user}@${remote_host} "mkdir -p '${remote_dir}'"
 
 # 执行 rsync 同步
-rsync -avz --delete -e "ssh -p ${REMOTE_PORT}" "${SOURCE_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${DEST_DIR}"
+rsync -avz --delete -e "ssh -p ${remote_port}" "${local_dir}/" "${remote_user}@${remote_host}:${remote_dir}"
 
 if [ \$? -eq 0 ]; then
-    echo "同步成功: \$(date)"
+    echo "Memos 备份成功: \$(date)"
 else
-    echo "同步失败: \$(date)"
+    echo "Memos 备份失败: \$(date)"
 fi
 EOF
-
-            chmod +x "$SCRIPT_FILE"
-            echo -e "  ✅ 脚本已成功创建在：${gl_lv}${SCRIPT_FILE}${gl_bai}"
+            chmod +x "$sync_script_path"
+            echo -e "  ✅ 脚本已成功创建在：${gl_lv}${sync_script_path}${gl_bai}"
 
             # 设置定时任务
-            local CRON_JOB="0 0 * * * ${SCRIPT_FILE} >> ${LOG_FILE} 2>&1"
-            ( sudo crontab -l 2>/dev/null | grep -v "${SCRIPT_FILE}" ; echo "$CRON_JOB" ) | sudo crontab -
+            local CRON_JOB="0 ${cron_hour} * * * ${sync_script_path} >> ${LOG_FILE} 2>&1"
+            ( sudo crontab -l 2>/dev/null | grep -v "${sync_script_path}" ; echo "$CRON_JOB" ) | sudo crontab -
 
             if [ $? -eq 0 ]; then
                 echo -e "  ✅ Cron 任务已成功设置！"
-                echo -e "  任务将在每天 ${CRON_HOUR} 点自动执行。"
+                echo -e "  任务将在每天 ${cron_hour} 点自动执行。"
             else
                 echo -e "  ${gl_hong}❌ 添加 Cron 任务失败。请手动检查并添加。${gl_bai}"
             fi
 
-            echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据到 ${remote_host}。"
+            echo -e "\n🎉 配置完成！"
         }
         
         function delete_memos_sync() {
             clear; echo -e "${gl_kjlan}删除 Memos 备份配置...${gl_bai}"
-
             local configured_servers=""
             if [ -d "${SYNC_SCRIPT_BASE}" ]; then
-                configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+                configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_to_.*.sh" 2>/dev/null | sed 's/sync_memos_to_//g;s/.sh//g')
             fi
 
             if [ -z "$configured_servers" ]; then
@@ -1231,10 +1236,9 @@ EOF
             echo -e "${gl_kjlan}已配置的远程服务器:${gl_bai}"
             echo "$configured_servers" | sed 's/^/  /'
             echo -e "----------------------------------------"
-
             read -p "请输入要删除备份配置的服务器地址: " server_to_delete
 
-            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${server_to_delete}.sh"
+            local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_to_${server_to_delete}.sh"
             if [ -f "$sync_script_path" ]; then
                 echo -e "${gl_hong}警告：此操作将永久删除服务器 ${server_to_delete} 的备份配置和定时任务。${gl_bai}"
                 read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
@@ -1253,41 +1257,23 @@ EOF
         function run_memos_sync() {
             clear; echo -e "${gl_kjlan}立即执行 Memos 备份...${gl_bai}"
             echo "----------------------------------------"
-            local configured_scripts=""
-            if [ -d "${SYNC_SCRIPT_BASE}" ]; then
-                configured_scripts=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null)
-            fi
-
-            if [ -z "$configured_scripts" ]; then
+            if [ ! -d "${SYNC_SCRIPT_BASE}" ] || [ -z "$(ls -A "${SYNC_SCRIPT_BASE}" 2>/dev/null)" ]; then
                 echo -e "${gl_huang}未找到任何已配置的远程备份服务器。请先添加备份配置。${gl_bai}"
                 return
             fi
             
-            local total_backups=$(echo "$configured_scripts" | wc -l)
+            local scripts=("$SYNC_SCRIPT_BASE"/*.sh)
+            local total_backups=${#scripts[@]}
             local backup_count=0
             
             echo -e "${gl_lan}正在对所有已配置的远程服务器执行备份...${gl_bai}\n"
             
-            for script_name in $configured_scripts; do
-                local sync_script_path="${SYNC_SCRIPT_BASE}/${script_name}"
-                local server_address=$(echo "$script_name" | sed 's/sync_memos_//g;s/.sh//g')
-                
-                local cron_line=$(crontab -l 2>/dev/null | grep "$sync_script_path")
-                local remote_host=$(echo "$cron_line" | awk '{print $7}')
-                local remote_port=$(echo "$cron_line" | awk '{print $8}')
-                local remote_user=$(echo "$cron_line" | awk '{print $9}')
-                local local_dir=$(echo "$cron_line" | awk '{print $10}')
-                local remote_dir=$(echo "$cron_line" | awk '{print $11}')
-
-                if [ -z "$remote_host" ] || [ -z "$remote_port" ] || [ -z "$remote_user" ] || [ -z "$local_dir" ] || [ -z "$remote_dir" ]; then
-                    echo -e "${gl_hong}错误：未能从定时任务中解析出完整的备份参数。请重新配置。${gl_bai}"
-                    continue
-                fi
-
+            for script_path in "${scripts[@]}"; do
+                local server_address=$(basename "$script_path" | sed 's/sync_memos_to_//g;s/.sh//g')
                 backup_count=$((backup_count + 1))
                 echo -e "▶️  (${backup_count}/${total_backups}) 正在备份到服务器: ${gl_lv}${server_address}${gl_bai}"
                 
-                bash "$sync_script_path" "$remote_host" "$remote_port" "$remote_user" "$local_dir" "$remote_dir"
+                bash "$script_path"
                 
                 if [ $? -eq 0 ]; then
                     echo -e "✅ 备份任务执行完毕。\n"
@@ -1313,16 +1299,18 @@ EOF
             clear
             echo "Memos 管理"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            local memos_installed_flag=$(docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' &>/dev/null)
-            local memos_installed_color
-            if [ "$memos_installed_flag" == "true" ]; then memos_installed_color="${gl_lv}"; else memos_installed_color="${gl_bai}"; fi
+            
+            local memos_installed="false"
+            if docker ps -a --format '{{.Names}}' | grep -q 'memos'; then memos_installed="true"; fi
 
-            echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
-            echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
-            echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
-            echo -e "${memos_installed_color}4.    ${gl_bai}卸载 Memos"
+            local install_option_color="$gl_bai"
+            if [ "$memos_installed" == "true" ]; then install_option_color="$gl_lv"; fi
+
+            echo -e "${install_option_color}1.     ${gl_bai}安装 Memos"
+            echo -e "${gl_kjlan}2.     ${gl_bai}配置/管理自动备份"
+            echo -e "${install_option_color}3.     ${gl_bai}卸载 Memos"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
+            echo -e "${gl_kjlan}0.     ${gl_bai}返回上一级菜单"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " memos_choice
             case $memos_choice in
@@ -1335,7 +1323,7 @@ EOF
                         echo "已配置的远程服务器:"
                         local configured_servers=""
                         if [ -d "${SYNC_SCRIPT_BASE}" ]; then
-                            configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_.*.sh" 2>/dev/null | sed 's/sync_memos_//g;s/.sh//g')
+                            configured_servers=$(ls "${SYNC_SCRIPT_BASE}" | grep "sync_memos_to_.*.sh" 2>/dev/null | sed 's/sync_memos_to_//g;s/.sh//g')
                         fi
                         if [ -z "$configured_servers" ]; then
                             echo -e "  ${gl_hui}无${gl_bai}"
@@ -1361,8 +1349,7 @@ EOF
                         esac
                     done
                     ;;
-                3) view_memos_sync_log; press_any_key_to_continue ;;
-                4) uninstall_memos; press_any_key_to_continue ;;
+                3) uninstall_memos; press_any_key_to_continue ;;
                 0) break ;;
                 *) echo "无效输入"; sleep 1 ;;
             esac
@@ -1481,7 +1468,7 @@ EOF
     function docker_ps() {
         while true; do
             clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
-            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}1.    ${gl_bai}创建新的容器"; echo -e "${gl_lv}2.    ${gl_bai}启动指定容器"; echo -e "${gl_lv}3.    ${gl_bai}停止指定容器"; echo -e "${gl_lv}4.    ${gl_bai}删除指定容器"; echo -e "${gl_lv}5.    ${gl_bai}重启指定容器"; echo -e "${gl_lv}6.    ${gl_bai}启动所有容器"; echo -e "${gl_lv}7.    ${gl_bai}停止所有容器"; echo -e "${gl_lv}8.    ${gl_bai}删除所有容器"; echo -e "${gl_lv}9.    ${gl_bai}重启所有容器"; echo -e "${gl_lv}11.   ${gl_bai}进入指定容器"; echo -e "${gl_lv}12.   ${gl_bai}查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}1.     ${gl_bai}创建新的容器"; echo -e "${gl_lv}2.     ${gl_bai}启动指定容器"; echo -e "${gl_lv}3.     ${gl_bai}停止指定容器"; echo -e "${gl_lv}4.     ${gl_bai}删除指定容器"; echo -e "${gl_lv}5.     ${gl_bai}重启指定容器"; echo -e "${gl_lv}6.     ${gl_bai}启动所有容器"; echo -e "${gl_lv}7.     ${gl_bai}停止所有容器"; echo -e "${gl_lv}8.     ${gl_bai}删除所有容器"; echo -e "${gl_lv}9.     ${gl_bai}重启所有容器"; echo -e "${gl_lv}11.     ${gl_bai}进入指定容器"; echo -e "${gl_lv}12.     ${gl_bai}查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.     ${gl_bai}返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入创建命令: " dockername; $dockername ;;
@@ -1502,7 +1489,7 @@ EOF
     }
     function docker_image() {
         while true; do
-            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像         3. 删除指定镜像"; echo "2. 更新指定镜像         4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像       3. 删除指定镜像"; echo "2. 更新指定镜像       4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
@@ -1545,7 +1532,7 @@ EOF
     
     while true; do
         clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
-        echo -e "${gl_lv}1.    ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.    ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.    ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.    ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.    ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.    ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.    ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.    ${gl_bai}更换Docker源"; echo -e "${gl_lv}20.   ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo -e "${gl_lv}1.     ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.     ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.     ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.     ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.     ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.     ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.     ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.     ${gl_bai}更换Docker源"; echo -e "${gl_lv}20.     ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.     ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -1563,12 +1550,12 @@ EOF
                 clear
                 read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
                 case "$choice" in
-                  [Yy] | "1")
+                    [Yy] | "1")
                     docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
                     remove docker docker-compose docker-ce docker-ce-cli containerd.io
                     rm -f /etc/docker/daemon.json; hash -r
                     ;;
-                  *) echo "已取消" ;;
+                    *) echo "已取消" ;;
                 esac
                 press_any_key_to_continue
                 ;;
@@ -1622,8 +1609,8 @@ function update_script() {
     clear
     echo -e "${gl_kjlan}正在检查更新...${gl_bai}"
     
-    local remote_version=$(curl -sL "${SCRIPT_URL}")
-    remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    # 获取远程版本号，并移除可能存在的空白符和换行符
+    local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2 | tr -d '[:space:]\r')
     local current_version="${SCRIPT_VERSION}"
 
     if [ -z "$remote_version" ]; then
@@ -1631,9 +1618,10 @@ function update_script() {
         press_any_key_to_continue; return
     fi
 
-    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}     最新版本: ${gl_lv}v${remote_version}${gl_bai}"
+    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}      最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
-    if [[ "$current_version" == "$remote_version" ]]; then
+    # 使用 `[ ... ]` 代替 `[[ ... ]]` 提高兼容性
+    if [ "$current_version" == "$remote_version" ]; then
         echo -e "\n${gl_lv}已是最新版，无需更新！${gl_bai}"
         sleep 1
     else
@@ -1688,41 +1676,40 @@ function uninstall_script() {
 
 # --- 主菜单显示 ---
 function main_menu() {
-    clear
-    echo -e "${gl_kjlan}"
-    echo "  ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
-    echo "  ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
-    echo "  ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
-    echo -e "${gl_bai}"
-   
-    # 获取远程版本号
-    local remote_version=$(curl -sL "${SCRIPT_URL}")
-    remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
-    local current_version="${SCRIPT_VERSION}"
+    clear
+    echo -e "${gl_kjlan}"
+    echo "  ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
+    echo "  ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
+    echo "  ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
+    echo -e "${gl_bai}"
+    
+    # 获取远程版本号
+    local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2 | tr -d '[:space:]\r')
+    local current_version="${SCRIPT_VERSION}"
 
-    # 显示版本信息和提示语
-    echo -e "${gl_kjlan}AYANG's Toolbox v${current_version}${gl_bai}"
-    if [[ "$current_version" == "$remote_version" ]]; then
-        echo -e "${gl_lv}(已是最新版)${gl_bai}"
-    else
-        echo -e "${gl_huang}(发现新版本: v${remote_version})${gl_bai}"
-    fi
-    echo -e "${gl_huang}命令行输入Y可快速启动脚本${gl_bai}"
+    # 显示版本信息和提示语
+    echo -e "${gl_kjlan}AYANG's Toolbox v${current_version}${gl_bai}"
+    if [ "$current_version" == "$remote_version" ]; then
+        echo -e "${gl_lv}(已是最新版)${gl_bai}"
+    else
+        echo -e "${gl_huang}(发现新版本: v${remote_version})${gl_bai}"
+    fi
+    echo -e "${gl_huang}命令行输入y可快速启动脚本${gl_bai}"
 
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
-    echo -e "${gl_lv}2${gl_bai}.    系统更新"
-    echo -e "${gl_lv}3${gl_bai}.    系统清理"
-    echo -e "${gl_lv}4${gl_bai}.    系统工具"
-    echo -e "${gl_lv}5${gl_bai}.    应用管理"
-    echo -e "${gl_lv}6${gl_bai}.    Docker管理"
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_lv}00${gl_bai}.   更新脚本"
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_hong}-0${gl_bai}.   卸载脚本"
-    echo -e "${gl_hong}0${gl_bai}.    退出脚本"
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    read -p "请输入你的选择: " choice
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_lv}1${gl_bai}.     系统信息查询"
+    echo -e "${gl_lv}2${gl_bai}.     系统更新"
+    echo -e "${gl_lv}3${gl_bai}.     系统清理"
+    echo -e "${gl_lv}4${gl_bai}.     系统工具"
+    echo -e "${gl_lv}5${gl_bai}.     应用管理"
+    echo -e "${gl_lv}6${gl_bai}.     Docker管理"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_lv}00${gl_bai}.    更新脚本"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_hong}-0${gl_bai}.    卸载脚本"
+    echo -e "${gl_hong}0${gl_bai}.     退出脚本"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    read -p "请输入你的选择: " choice
 }
 
 # --- 主循环 ---
