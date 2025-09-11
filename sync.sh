@@ -111,9 +111,11 @@ function add_sync_task() {
         return
     fi
 
-    # 创建同步脚本
+    # 创建同步脚本 (新的命名格式)
     mkdir -p "$SYNC_SCRIPT_DIR"
-    local SCRIPT_FILE="${SYNC_SCRIPT_DIR}/sync_${REMOTE_HOST}_${REMOTE_USER}.sh"
+    local SOURCE_FOLDER_NAME=$(basename "${SOURCE_DIR}")
+    local DEST_FOLDER_NAME=$(basename "${DEST_DIR}")
+    local SCRIPT_FILE="${SYNC_SCRIPT_DIR}/sync_${REMOTE_HOST}_${SOURCE_FOLDER_NAME}_to_${DEST_FOLDER_NAME}.sh"
     
     cat > "$SCRIPT_FILE" <<EOF
 #!/usr/bin/env bash
