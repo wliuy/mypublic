@@ -203,7 +203,7 @@ function run_sync_task() {
 
     local scripts=("$SYNC_SCRIPT_DIR"/*.sh)
     for i in "${!scripts[@]}"; do
-        echo -e "${gl_lv}$((i+1)). ${gl_bai}$(basename "${scripts[$i]}")"
+        echo -e "${gl_lv}$((i+1)). ${gl_bai}${scripts[$i]}"
     done
     echo -e "\n${gl_huang}0. 返回${gl_bai}"
     echo "----------------------------------------"
@@ -237,7 +237,7 @@ function delete_sync_task() {
 
     local scripts=("$SYNC_SCRIPT_DIR"/*.sh)
     for i in "${!scripts[@]}"; do
-        echo -e "${gl_lv}$((i+1)). ${gl_bai}$(basename "${scripts[$i]}")"
+        echo -e "${gl_lv}$((i+1)). ${gl_bai}${scripts[$i]}"
     done
     echo -e "\n${gl_hong}0. 返回${gl_bai}"
     echo "----------------------------------------"
