@@ -122,7 +122,7 @@ function system_info() {
     echo -e "${gl_kjlan}-------------"
     if [ -n "$ipv4_address" ]; then echo -e "${gl_kjlan}IPv4地址:      ${gl_bai}$ipv4_address"; fi
     if [ -n "$ipv6_address" ]; then echo -e "${gl_kjlan}IPv6地址:      ${gl_bai}$ipv6_address"; fi
-    echo -e "${gl_kjlan}运营商:       ${gl_bai}$isp_info"
+    echo -e "${gl_kjlan}运营商:      ${gl_bai}$isp_info"
     echo -e "${gl_kjlan}地理位置:     ${gl_bai}$country $city"
     echo -e "${gl_kjlan}-------------"
     echo -e "${gl_kjlan}运行时长:     ${gl_bai}$runtime"
@@ -211,9 +211,9 @@ function system_tools() {
             echo -e "${gl_lv}虚拟内存大小已成功调整为 ${swap_size}M${gl_bai}"
         }
         while true; do
-            clear; echo "设置虚拟内存"
+            clear; echo "设置虚拟内存";
             local swap_info=$(free -m | awk 'NR==3{used=$3; total=$2; if (total == 0) {percentage=0} else {percentage=used*100/total}; printf "%dM/%dM (%d%%)", used, total, percentage}')
-            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M        2. 分配2048M"; echo "3. 分配4096M        4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M         2. 分配2048M"; echo "3. 分配4096M         4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " swap_choice
             case "$swap_choice" in
               1) _do_add_swap 1024; break ;;
@@ -233,7 +233,7 @@ function system_tools() {
             if grep -q 'Alpine' /etc/issue 2>/dev/null; then install tzdata; cp /usr/share/zoneinfo/${1} /etc/localtime; else timedatectl set-timezone ${1}; fi
         }
         while true; do
-            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间        2.  中国香港时间"; echo "3.  日本东京时间        4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间        12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间        22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
+            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间         2.  中国香港时间"; echo "3.  日本东京时间         4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间         12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间         22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) _set_timedate Asia/Shanghai ;;
@@ -253,6 +253,99 @@ function system_tools() {
             esac
         done
     }
+    # 新的定时任务管理函数
+    function cron_management() {
+        while true; do
+            clear
+            local CRONTAB_EXISTS="true"
+            if ! command -v crontab &>/dev/null; then
+                CRONTAB_EXISTS="false"
+                echo -e "${gl_huang}未检测到 crontab 命令，正在安装...${gl_bai}"
+                if command -v apt &>/dev/null; then
+                    apt update && apt install -y cron
+                elif command -v yum &>/dev/null; then
+                    yum install -y cronie
+                elif command -v apk &>/dev/null; then
+                    apk add cronie
+                else
+                    echo -e "${gl_hong}错误：无法安装 cronie，请手动安装。${gl_bai}"
+                    press_any_key_to_continue
+                    return
+                fi
+                systemctl enable cron >/dev/null 2>&1 || systemctl enable crond >/dev/null 2>&1
+                systemctl start cron >/dev/null 2>&1 || systemctl start crond >/dev/null 2>&1
+                echo -e "${gl_lv}cron 服务已安装并启动。${gl_bai}"
+            fi
+
+            clear
+            echo "定时任务管理"
+            echo "------------------------"
+            echo "当前定时任务列表："
+            crontab -l 2>/dev/null || echo "（无任务）"
+            echo "------------------------"
+            echo "1. 添加定时任务"
+            echo "2. 删除定时任务"
+            echo "3. 编辑定时任务"
+            echo "------------------------"
+            echo "0. 返回上一级选单"
+            echo "------------------------"
+            read -p "请输入你的选择: " cron_choice
+
+            case $cron_choice in
+                1)
+                    read -p "请输入新任务的执行命令: " new_task
+                    echo "------------------------"
+                    echo "1. 每月任务"
+                    echo "2. 每周任务"
+                    echo "3. 每天任务"
+                    echo "4. 每小时任务"
+                    echo "------------------------"
+                    read -p "请选择任务频率: " frequency_choice
+                    case $frequency_choice in
+                        1)
+                            read -p "选择每月的几号执行任务 (1-30): " day
+                            (crontab -l 2>/dev/null; echo "0 0 $day * * $new_task") | crontab -
+                            ;;
+                        2)
+                            read -p "选择周几执行任务 (0-6，0代表星期日): " weekday
+                            (crontab -l 2>/dev/null; echo "0 0 * * $weekday $new_task") | crontab -
+                            ;;
+                        3)
+                            read -p "选择每天几点执行任务 (小时，0-23): " hour
+                            (crontab -l 2>/dev/null; echo "0 $hour * * * $new_task") | crontab -
+                            ;;
+                        4)
+                            read -p "输入每小时的第几分钟执行任务 (分钟，0-59): " minute
+                            (crontab -l 2>/dev/null; echo "$minute * * * * $new_task") | crontab -
+                            ;;
+                        *)
+                            echo -e "${gl_hong}无效输入，任务添加已取消。${gl_bai}"
+                            ;;
+                    esac
+                    echo -e "${gl_lv}任务添加成功！${gl_bai}"
+                    press_any_key_to_continue
+                    ;;
+                2)
+                    read -p "请输入需要删除任务的关键字: " keyword
+                    (crontab -l 2>/dev/null | grep -v "$keyword") | crontab -
+                    echo -e "${gl_lv}包含关键字 '${keyword}' 的任务已删除。${gl_bai}"
+                    press_any_key_to_continue
+                    ;;
+                3)
+                    crontab -e
+                    echo -e "${gl_lv}编辑完成。${gl_bai}"
+                    press_any_key_to_continue
+                    ;;
+                0)
+                    break
+                    ;;
+                *)
+                    echo "无效输入"
+                    sleep 1
+                    ;;
+            esac
+        done
+    }
     while true; do
         clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. ROOT密码登录模式"; echo "2. 修改登录密码"; echo "3. 开放所有端口"; echo "4. 修改SSH连接端口"; echo "5. 优化DNS地址"; echo "6. 查看端口占用状态"; echo "7. 修改虚拟内存大小"; echo "8. 系统时区调整"; echo "9. 定时任务管理"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
@@ -265,7 +358,7 @@ function system_tools() {
             6) clear; install ss; ss -tulnpe; press_any_key_to_continue ;;
             7) add_swap_menu; press_any_key_to_continue ;;
             8) timezone_menu ;;
-            9) install cron || install cronie; clear; crontab -e ;;
+            9) cron_management ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
@@ -435,9 +528,9 @@ function app_management() {
                 echo -e "  ${gl_huang}未安装${gl_bai}"
             fi
             echo -e "\n${gl_kjlan}监控详情：${gl_bai}"
-            echo -e "  监控中    : ${gl_kjlan}${MONITORED_IMAGES:-无}${gl_bai}"
-            echo -e "  未监控    : ${UNMONITORED_IMAGES:-无}"
-            echo -e "  更新频率  : ${FORMATTED_INTERVAL:-无}"
+            echo -e "  监控中     : ${gl_kjlan}${MONITORED_IMAGES:-无}${gl_bai}"
+            echo -e "  未监控     : ${UNMONITORED_IMAGES:-无}"
+            echo -e "  更新频率   : ${FORMATTED_INTERVAL:-无}"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             
             if does_watchtower_exist; then
@@ -653,12 +746,12 @@ function app_management() {
 
         echo -e "${gl_lan}正在拉取 FileBrowser 镜像并启动容器...${gl_bai}";
         docker run -d --name filebrowser --restart always \
-          -u 0:0 \
-          -v /wliuy/filebrowser/files:/srv \
-          -v /wliuy/filebrowser/database:/database \
-          -v /wliuy/filebrowser/config:/config \
-          -p 5566:80 \
-          filebrowser/filebrowser
+            -u 0:0 \
+            -v /wliuy/filebrowser/files:/srv \
+            -v /wliuy/filebrowser/database:/database \
+            -v /wliuy/filebrowser/config:/config \
+            -p 5566:80 \
+            filebrowser/filebrowser
 
         echo -e "${gl_lan}等待容器启动并生成日志...${gl_bai}"
         local timeout=20
@@ -1065,7 +1158,7 @@ EOF
         fi
         echo -e "${gl_hong}警告：此操作将永久删除 Lucky 容器、镜像以及所有数据 (${gl_huang}/docker/goodluck${gl_hong})。${gl_bai}"
         read -p "如确认继续，请输入 'y' 或 '1': " confirm
-        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then 
+        if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
             echo -e "${gl_lan}正在停止并删除 lucky 容器...${gl_bai}"; docker stop lucky && docker rm lucky
             echo -e "${gl_lan}正在删除 gdy666/lucky 镜像...${gl_bai}"; docker rmi gdy666/lucky
             echo -e "${gl_lan}正在删除数据目录 /docker/goodluck...${gl_bai}"; rm -rf /docker/goodluck
@@ -1080,19 +1173,19 @@ EOF
         echo -e "应用管理"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "安装&管理:"
-        echo -e "  $(get_app_color 'lucky')1.    Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')2.    FileBrowser (文件管理)${gl_bai}"
-        echo -e "  $(get_app_color 'memos')3.    Memos (轻量笔记)${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')4.    Watchtower (容器自动更新)${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')1.  Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')2.  FileBrowser (文件管理)${gl_bai}"
+        echo -e "  $(get_app_color 'memos')3.  Memos (轻量笔记)${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')4.  Watchtower (容器自动更新)${gl_bai}"
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  $(get_app_color 'lucky')-1.   卸载 Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')-2.   卸载 FileBrowser${gl_bai}"
-        echo -e "  $(get_app_color 'memos')-3.   卸载 Memos${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')-4.   卸载 Watchtower${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')-1.  卸载 Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')-2.  卸载 FileBrowser${gl_bai}"
+        echo -e "  $(get_app_color 'memos')-3.  卸载 Memos${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')-4.  卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo -e "0.    返回主菜单"
+        echo -e "0.  返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
@@ -1155,7 +1248,7 @@ EOF
     function docker_ps() {
         while true; do
             clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
-            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新的容器"; echo "2. 启动指定容器           6. 启动所有容器"; echo "3. 停止指定容器           7. 停止所有容器"; echo "4. 删除指定容器           8. 删除所有容器"; echo "5. 重启指定容器           9. 重启所有容器"; echo "11. 进入指定容器          12. 查看容器日志"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新的容器"; echo "2. 启动指定容器         6. 启动所有容器"; echo "3. 停止指定容器         7. 停止所有容器"; echo "4. 删除指定容器         8. 删除所有容器"; echo "5. 重启指定容器         9. 重启所有容器"; echo "11. 进入指定容器        12. 查看容器日志"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入创建命令: " dockername; $dockername ;;
@@ -1176,7 +1269,7 @@ EOF
     }
     function docker_image() {
         while true; do
-            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像           3. 删除指定镜像"; echo "2. 更新指定镜像           4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像         3. 删除指定镜像"; echo "2. 更新指定镜像         4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
@@ -1230,24 +1323,24 @@ EOF
             5) docker_network ;;
             6) docker_volume ;;
             7)
-              clear; read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice
-              if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
-              press_any_key_to_continue
-              ;;
+                clear; read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice
+                if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
+                press_any_key_to_continue
+                ;;
             8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
             20)
-              clear
-              read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
-              case "$choice" in
-                [Yy] | "1")
-                  docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
-                  remove docker docker-compose docker-ce docker-ce-cli containerd.io
-                  rm -f /etc/docker/daemon.json; hash -r
-                  ;;
-                *) echo "已取消" ;;
-              esac
-              press_any_key_to_continue
-              ;;
+                clear
+                read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
+                case "$choice" in
+                  [Yy] | "1")
+                    docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
+                    remove docker docker-compose docker-ce docker-ce-cli containerd.io
+                    rm -f /etc/docker/daemon.json; hash -r
+                    ;;
+                  *) echo "已取消" ;;
+                esac
+                press_any_key_to_continue
+                ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
@@ -1307,7 +1400,7 @@ function update_script() {
         press_any_key_to_continue; return
     fi
 
-    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}    最新版本: ${gl_lv}v${remote_version}${gl_bai}"
+    echo -e "当前版本: ${gl_huang}v${current_version}${gl_bai}     最新版本: ${gl_lv}v${remote_version}${gl_bai}"
 
     if [[ "$current_version" == "$remote_version" ]]; then
         echo -e "\n${gl_lv}已是最新版，无需更新！${gl_bai}"
@@ -1366,12 +1459,12 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo -e "      █████╗ ██╗     ██╗ █████╗ ███╗      ██╗ ██████╗"
-    echo -e "      ██╔══██╗╚██╗   ██╔╝██╔══██╗████╗    ██║██╔════╝"
+    echo -e "      █████╗ ██╗      ██╗ █████╗ ███╗      ██╗ ██████╗"
+    echo -e "      ██╔══██╗╚██╗    ██╔╝██╔══██╗████╗     ██║██╔════╝"
     echo -e "      ███████║  ╚████╔╝  ███████║██╔██╗  ██║██║  ███╗"
-    echo -e "      ██╔══██║    ╚██╔╝   ██╔══██║██║╚██╗██║██║    ██║"
-    echo -e "      ██║  ██║    ██║    ██║  ██║██║ ╚████║╚██████╔╝"
-    echo -e "      ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
+    echo -e "      ██╔══██║    ╚██╔╝  ██╔══██║██║╚██╗██║██║    ██║"
+    echo -e "      ██║  ██║    ██║   ██║  ██║██║ ╚████║╚██████╔╝"
+    echo -e "      ╚═╝  ╚═╝    ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝"
     echo -e "${gl_bai}"
     
     # 获取远程版本号
@@ -1380,11 +1473,11 @@ function main_menu() {
     local current_version="${SCRIPT_VERSION}"
 
     # 显示版本信息
-    echo -e "${gl_lan}              AYANG's Toolbox v${current_version}                      ${gl_bai}"
+    echo -e "${gl_lan}            AYANG's Toolbox v${current_version}                         ${gl_bai}"
     if [[ "$current_version" == "$remote_version" ]]; then
-        echo -e "${gl_lv}                  (已是最新版)                       ${gl_bai}"
+        echo -e "${gl_lv}                  (已是最新版)                                 ${gl_bai}"
     else
-        echo -e "${gl_huang}                (发现新版本: v${remote_version})                      ${gl_bai}"
+        echo -e "${gl_huang}              (发现新版本: v${remote_version})                                 ${gl_bai}"
     fi
 
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
