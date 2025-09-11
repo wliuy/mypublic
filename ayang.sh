@@ -1688,40 +1688,41 @@ function uninstall_script() {
 
 # --- 主菜单显示 ---
 function main_menu() {
-    clear
-    echo -e "${gl_kjlan}"
-    echo "  ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
-    echo "  ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
-    echo "  ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
-    echo -e "${gl_bai}"
-    
-    # 获取远程版本号
-    local remote_version=$(curl -sL "${SCRIPT_URL}")
-    remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
-    local current_version="${SCRIPT_VERSION}"
+    clear
+    echo -e "${gl_kjlan}"
+    echo "  ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
+    echo "  ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
+    echo "  ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
+    echo -e "${gl_bai}"
+    
+    # 获取远程版本号
+    local remote_version=$(curl -sL "${SCRIPT_URL}")
+    remote_version=$(echo "${remote_version}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2)
+    local current_version="${SCRIPT_VERSION}"
 
-    # 显示版本信息
-    echo -e "${gl_lan}            AYANG's Toolbox v${current_version}                         ${gl_bai}"
-    if [[ "$current_version" == "$remote_version" ]]; then
-        echo -e "${gl_lv}                  (已是最新版)                                 ${gl_bai}"
-    else
-        echo -e "${gl_huang}              (发现新版本: v${remote_version})                                 ${gl_bai}"
-    fi
+    # 显示版本信息和提示语
+    echo -e "${gl_kjlan}AYANG's Toolbox v${current_version}${gl_bai}"
+    if [[ "$current_version" == "$remote_version" ]]; then
+        echo -e "${gl_lv}(已是最新版)${gl_bai}"
+    else
+        echo -e "${gl_huang}(发现新版本: v${remote_version})${gl_bai}"
+    fi
+    echo -e "${gl_huang}命令行输入Y可快速启动脚本${gl_bai}"
 
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
-    echo -e "${gl_lv}2${gl_bai}.    系统更新"
-    echo -e "${gl_lv}3${gl_bai}.    系统清理"
-    echo -e "${gl_lv}4${gl_bai}.    系统工具"
-    echo -e "${gl_lv}5${gl_bai}.    应用管理"
-    echo -e "${gl_lv}6${gl_bai}.    Docker管理"
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_lv}00${gl_bai}.   更新脚本"
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_hong}-0${gl_bai}.   卸载脚本"
-    echo -e "${gl_hong}0${gl_bai}.    退出脚本"
-    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    read -p "请输入你的选择: " choice
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_kjlan}1${gl_bai}.    系统信息查询"
+    echo -e "${gl_kjlan}2${gl_bai}.    系统更新"
+    echo -e "${gl_kjlan}3${gl_bai}.    系统清理"
+    echo -e "${gl_kjlan}4${gl_bai}.    系统工具"
+    echo -e "${gl_kjlan}5${gl_bai}.    应用管理"
+    echo -e "${gl_kjlan}6${gl_bai}.    Docker管理"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_kjlan}00${gl_bai}.   更新脚本"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    echo -e "${gl_kjlan}-0${gl_bai}.   卸载脚本"
+    echo -e "${gl_kjlan}0${gl_bai}.    退出脚本"
+    echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
+    read -p "请输入你的选择: " choice
 }
 
 # --- 主循环 ---
