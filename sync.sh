@@ -2,7 +2,7 @@
 
 # =======================================================
 # 交互式通用文件同步管理工具
-# 版本：1.0.0
+# 版本：1.0.1
 # 功能：增删改查自动化 rsync 同步任务
 # =======================================================
 
@@ -11,7 +11,7 @@ SYNC_SCRIPT_DIR="$HOME/sync_scripts"
 LOG_FILE="/var/log/auto_sync.log"
 
 # 脚本版本号
-readonly SCRIPT_VERSION="1.0.0"
+readonly SCRIPT_VERSION="1.0.1"
 
 gl_hong='\033[31m'
 gl_lv='\033[32m'
@@ -179,6 +179,7 @@ function list_sync_tasks() {
         fi
         
         echo -e "${gl_lv}--- 任务 ${i} ---${gl_bai}"
+        echo -e "${gl_kjlan}命名:   ${gl_bai}$(basename "${script}")"
         echo -e "${gl_kjlan}文件:   ${gl_bai}${script}"
         echo -e "${gl_kjlan}来源:   ${gl_bai}${source_dir}"
         echo -e "${gl_kjlan}目标:   ${gl_bai}${remote_info}"
@@ -204,7 +205,7 @@ function run_sync_task() {
 
     local scripts=("$SYNC_SCRIPT_DIR"/*.sh)
     for i in "${!scripts[@]}"; do
-        echo -e "${gl_lv}$((i+1)). ${gl_bai}${scripts[$i]}"
+        echo -e "${gl_lv}$((i+1)). ${gl_bai}$(basename "${scripts[$i]}")"
     done
     echo -e "\n${gl_huang}0. 返回${gl_bai}"
     echo "----------------------------------------"
@@ -238,7 +239,7 @@ function delete_sync_task() {
 
     local scripts=("$SYNC_SCRIPT_DIR"/*.sh)
     for i in "${!scripts[@]}"; do
-        echo -e "${gl_lv}$((i+1)). ${gl_bai}${scripts[$i]}"
+        echo -e "${gl_lv}$((i+1)). ${gl_bai}$(basename "${scripts[$i]}")"
     done
     echo -e "\n${gl_hong}0. 返回${gl_bai}"
     echo "----------------------------------------"
