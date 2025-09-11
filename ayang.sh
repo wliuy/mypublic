@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0.1 (首页美化与颜色统一)
+# AYANG's Toolbox v2.0.3 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.0.1"
+readonly SCRIPT_VERSION="2.0.3"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -264,16 +264,16 @@ function system_tools() {
 
             clear
             echo "定时任务管理"
-            echo "------------------------"
+            echo -e "${gl_hong}------------------------${gl_bai}"
             echo "当前定时任务列表："
             crontab -l 2>/dev/null || echo "（无任务）"
-            echo "------------------------"
-            echo "1. 添加定时任务"
-            echo "2. 删除定时任务"
-            echo "3. 编辑定时任务"
-            echo "------------------------"
-            echo "0. 返回上一级选单"
-            echo "------------------------"
+            echo -e "${gl_hong}------------------------${gl_bai}"
+            echo -e "${gl_lv}1.    ${gl_bai}添加定时任务"
+            echo -e "${gl_lv}2.    ${gl_bai}删除定时任务"
+            echo -e "${gl_lv}3.    ${gl_bai}编辑定时任务"
+            echo -e "${gl_hong}------------------------${gl_bai}"
+            echo -e "${gl_hong}0.    ${gl_bai}返回上一级选单"
+            echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " cron_choice
 
             case $cron_choice in
@@ -599,7 +599,7 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1.    ${gl_bai}ROOT密码登录模式"; echo -e "${gl_lv}2.    ${gl_bai}修改登录密码"; echo -e "${gl_lv}3.    ${gl_bai}开放所有端口"; echo -e "${gl_lv}4.    ${gl_bai}修改SSH连接端口"; echo -e "${gl_lv}5.    ${gl_bai}优化DNS地址"; echo -e "${gl_lv}6.    ${gl_bai}查看端口占用状态"; echo -e "${gl_lv}7.    ${gl_bai}修改虚拟内存大小"; echo -e "${gl_lv}8.    ${gl_bai}系统时区调整"; echo -e "${gl_lv}9.    ${gl_bai}定时任务管理"; echo -e "${gl_lv}10.   ${gl_bai}定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.    ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.    修改登录密码"; echo -e "${gl_lv}3${gl_bai}.    开放所有端口"; echo -e "${gl_lv}4${gl_bai}.    修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.    优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.    查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.    修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.    系统时区调整"; echo -e "${gl_lv}9${gl_bai}.    定时任务管理"; echo -e "${gl_lv}10${gl_bai}.   定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.    返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -1545,7 +1545,7 @@ EOF
     
     while true; do
         clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
-        echo -e "${gl_lv}1.    ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.    ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.    ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.    ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.    ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.    ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.    ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.    ${gl_bai}更换Docker源"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo -e "${gl_lv}1.    ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.    ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.    ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.    ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.    ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.    ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.    ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.    ${gl_bai}更换Docker源"; echo -e "${gl_lv}20.   ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -1559,6 +1559,19 @@ EOF
                 press_any_key_to_continue
                 ;;
             8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
+            20)
+                clear
+                read -p "$(echo -e "${gl_hong}注意: ${gl_bai}确定卸载docker环境吗？(Y/N): ")" choice
+                case "$choice" in
+                  [Yy] | "1")
+                    docker ps -a -q | xargs -r docker rm -f && docker images -q | xargs -r docker rmi -f
+                    remove docker docker-compose docker-ce docker-ce-cli containerd.io
+                    rm -f /etc/docker/daemon.json; hash -r
+                    ;;
+                  *) echo "已取消" ;;
+                esac
+                press_any_key_to_continue
+                ;;
             0) break ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
@@ -1658,7 +1671,7 @@ function uninstall_script() {
         return;
     fi
 
-    echo -e "${gl_hong}警告：这将从系统中永久删除脚本 '${shortcut_path}' 和 '${root_copy_path}'。${gl_bai}"
+    echo -e "${gl_hong}警告：此操作将永久删除脚本 '${shortcut_path}' 和 '${root_copy_path}'。${gl_bai}"
     read -p "你确定要继续吗？ (输入 'y' 或 '1' 确认, 其他任意键取消): " confirm
     if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
         echo -e "\n${gl_lan}正在移除快捷命令: ${shortcut_path}...${gl_bai}"; rm -f "${shortcut_path}"
@@ -1677,9 +1690,9 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo "╦╔═╔═╗ ╦╦╦  ╦╔═╗╔╗╔ ╔═╗╦ ╦"
-    echo "╠╩╗║╣  ║║║  ║║ ║║║║ ╚═╗╠═╣"
-    echo "╩ ╩╚═╝╚╝╩╩═╝╩╚═╝╝╚╝o╚═╝╩ ╩"
+    echo "  ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
+    echo "  ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
+    echo "  ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
     echo -e "${gl_bai}"
     
     # 获取远程版本号
@@ -1696,17 +1709,17 @@ function main_menu() {
     fi
 
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_lv}1.    ${gl_bai}系统信息查询"
-    echo -e "${gl_lv}2.    ${gl_bai}系统更新"
-    echo -e "${gl_lv}3.    ${gl_bai}系统清理"
-    echo -e "${gl_lv}4.    ${gl_bai}系统工具"
-    echo -e "${gl_lv}5.    ${gl_bai}应用管理"
-    echo -e "${gl_lv}6.    ${gl_bai}Docker管理"
+    echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
+    echo -e "${gl_lv}2${gl_bai}.    系统更新"
+    echo -e "${gl_lv}3${gl_bai}.    系统清理"
+    echo -e "${gl_lv}4${gl_bai}.    系统工具"
+    echo -e "${gl_lv}5${gl_bai}.    应用管理"
+    echo -e "${gl_lv}6${gl_bai}.    Docker管理"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_lv}00.   ${gl_bai}更新脚本"
+    echo -e "${gl_lv}00${gl_bai}.   更新脚本"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
-    echo -e "${gl_hong}-0.   ${gl_bai}卸载脚本"
-    echo -e "${gl_hong}0.    ${gl_bai}退出脚本"
+    echo -e "${gl_hong}-0${gl_bai}.   卸载脚本"
+    echo -e "${gl_hong}0${gl_bai}.    退出脚本"
     echo -e "${gl_hong}----------------------------------------------------${gl_bai}"
     read -p "请输入你的选择: " choice
 }
