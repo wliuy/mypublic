@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.1.0 (首页美化与颜色统一)
+# AYANG's Toolbox v2.1.1 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.1.0"
+readonly SCRIPT_VERSION="2.1.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -172,7 +172,7 @@ function system_tools() {
     }
     function set_dns_ui() {
         while true; do
-            clear; echo "优化DNS地址"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "当前DNS地址"; cat /etc/resolv.conf; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo ""; echo "1. 国外DNS (Google/Cloudflare)"; echo "2. 国内DNS (阿里/腾讯)"; echo "3. 手动编辑"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            clear; echo "优化DNS地址"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo "当前DNS地址"; cat /etc/resolv.conf; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo ""; echo "1. 国外DNS (Google/Cloudflare)"; echo "2. 国内DNS (阿里/腾讯)"; echo "3. 手动编辑"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo "0. 返回"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"
             read -p "请输入你的选择: " dns_choice
             local dns_config=""
             case "$dns_choice" in
@@ -1415,7 +1415,7 @@ EOF
         echo -e "  $(get_app_color 'memos')-3.  卸载 Memos${gl_bai}"
         echo -e "  $(get_app_color 'watchtower')-4.  卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo -e "0.  返回主菜单"
+        echo -e "  0.  返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
