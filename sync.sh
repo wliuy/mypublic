@@ -282,8 +282,8 @@ function main_menu() {
     echo -e "${gl_kjlan}========================================="
     echo -e "        通用文件同步管理工具"
     echo -e "=========================================${gl_bai}"
-    echo -e "${gl_lv}1.    添加新的同步任务${gl_bai}"
-    echo -e "${gl_lv}2.    查看已添加的同步任务${gl_bai}"
+    echo -e "${gl_lv}1.    查看已添加的同步任务${gl_bai}"
+    echo -e "${gl_lv}2.    添加新的同步任务${gl_bai}"
     echo -e "${gl_lv}3.    立即执行同步任务${gl_bai}"
     echo -e "${gl_lv}4.    删除同步任务${gl_bai}"
     echo -e "${gl_lv}5.    查看同步日志${gl_bai}"
@@ -294,8 +294,8 @@ function main_menu() {
     read -p "$(echo -e "${gl_kjlan}请输入你的选择: ${gl_bai}")" choice
 
     case $choice in
-        1) add_sync_task ;;
-        2) list_sync_tasks ;;
+        1) list_sync_tasks ;;
+        2) add_sync_task ;;
         3) run_sync_task ;;
         4) delete_sync_task ;;
         5) view_sync_log ;;
