@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0.4 (首页美化与颜色统一)
+# AYANG's Toolbox v2.0.5 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.0.4"
+readonly SCRIPT_VERSION="2.0.5"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
