@@ -1531,8 +1531,8 @@ EOF
     }
     
     while true; do
-        clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
-        echo -e "${gl_lv}1.     ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.     ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.     ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.     ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.     ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.     ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.     ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.     ${gl_bai}更换Docker源"; echo -e "${gl_lv}-1.    ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}0.     ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
+        echo -e "${gl_lv}1.     ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.     ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.     ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.     ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.     ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.     ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.     ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.     ${gl_bai}更换Docker源"; echo -e "${gl_lv}-1.    ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"; echo -e "${gl_lv}0.     ${gl_bai}返回主菜单"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -1689,19 +1689,19 @@ function main_menu() {
     echo -e "${gl_kjlan} AYANG's Toolbox v${current_version}${gl_bai}"
     echo -e "${gl_kjlan} 输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
 
-    echo -e "${gl_hong}----------------------${gl_kjlan}-----${gl_bai}"
+    echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
     echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
     echo -e "${gl_lv}2${gl_bai}.    系统更新"
     echo -e "${gl_lv}3${gl_bai}.    系统清理"
     echo -e "${gl_lv}4${gl_bai}.    系统工具"
     echo -e "${gl_lv}5${gl_bai}.    应用管理"
     echo -e "${gl_lv}6${gl_bai}.    Docker管理"
-    echo -e "${gl_hong}----------------------${gl_kjlan}-----${gl_bai}"
+    echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
     echo -e "${gl_lv}00${gl_bai}.   更新脚本"
-    echo -e "${gl_hong}----------------------${gl_kjlan}-----${gl_bai}"
+    echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
     echo -e "${gl_kjlan}-0${gl_bai}.   卸载脚本"
     echo -e "${gl_kjlan}0${gl_bai}.    退出脚本"
-    echo -e "${gl_hong}----------------------${gl_kjlan}-----${gl_bai}"
+    echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
     read -p "请输入你的选择: " choice
 }
 
