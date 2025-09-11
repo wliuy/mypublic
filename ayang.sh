@@ -1681,8 +1681,6 @@ function main_menu() {
     echo " ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
     echo " ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
     echo " ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
-    echo -e "${gl_bai}"
-    
     # 获取远程版本号
     local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2 | tr -d '[:space:]\r')
     local current_version="${SCRIPT_VERSION}"
