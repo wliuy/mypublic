@@ -1690,9 +1690,9 @@ function main_menu() {
     # 显示版本信息和提示语
     echo -e "${gl_kjlan}AYANG's Toolbox v${current_version}${gl_bai}"
     if [ "$current_version" == "$remote_version" ]; then
-        echo -e "${gl_lv}       (已是最新版)${gl_bai}"
+        echo -e "${gl_lv}      (已是最新版)${gl_bai}"
     else
-        echo -e "${gl_huang}       (发现新版本: v${remote_version})${gl_bai}"
+        echo -e "${gl_huang}      (发现新版本: v${remote_version})${gl_bai}"
     fi
     echo -e "${gl_huang}命令行输入y可快速启动脚本${gl_bai}"
 
