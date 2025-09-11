@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0.0 (界面美化、逻辑精简与对齐优化)
+# AYANG's Toolbox v2.0.1 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.0.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -1176,7 +1176,7 @@ function app_management() {
             mkdir -p "${SYNC_SCRIPT_BASE}"
             local sync_script_path="${SYNC_SCRIPT_BASE}/sync_memos_${remote_host}.sh"
             
-            cat > "${sync_script_path}" <<EOF
+            cat > "$SCRIPT_FILE" <<EOF
 #!/usr/bin/env bash
 # =======================================================
 # 自动同步脚本 (由 ayang.sh 生成)
@@ -1555,8 +1555,7 @@ EOF
             5) docker_network ;;
             6) docker_volume ;;
             7)
-                clear; read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice
-                if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
+                clear; read -p "$(echo -e "${gl_huang}提示: ${gl_bai}将清理无用的镜像容器网络，包括停止的容器，确定清理吗？(Y/N): ")" choice; if [[ "${choice,,}" == "y" || "$choice" == "1" ]]; then docker system prune -af --volumes; else echo "已取消"; fi
                 press_any_key_to_continue
                 ;;
             8) clear; bash <(curl -sSL https://linuxmirrors.cn/docker.sh); press_any_key_to_continue ;;
@@ -1678,9 +1677,9 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo "  ▄▄▄ ▄▄ ▄ ▄▄  ▄ ▄▄  ▄▄▄ ▄▄ ▄▄  "
-    echo "  █ █ █ █ █ █ █ █ █ █ █ █ █ █ "
-    echo "  █ █ █▄█ █▄█ █ █ █ █▄█ █▄█ █▄█ "
+    echo "╦╔═╔═╗ ╦╦╦  ╦╔═╗╔╗╔ ╔═╗╦ ╦"
+    echo "╠╩╗║╣  ║║║  ║║ ║║║║ ╚═╗╠═╣"
+    echo "╩ ╩╚═╝╚╝╩╩═╝╩╚═╝╝╚╝o╚═╝╩ ╩"
     echo -e "${gl_bai}"
     
     # 获取远程版本号
