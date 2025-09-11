@@ -113,9 +113,7 @@ function add_sync_task() {
 
     # 创建同步脚本 (新的命名格式)
     mkdir -p "$SYNC_SCRIPT_DIR"
-    local SANITIZED_SOURCE_DIR=$(echo "${SOURCE_DIR}" | sed 's/\//_/g')
-    local SANITIZED_DEST_DIR=$(echo "${DEST_DIR}" | sed 's/\//_/g')
-    local SCRIPT_FILE="${SYNC_SCRIPT_DIR}/sync_${REMOTE_HOST}_${SANITIZED_SOURCE_DIR}_→_${SANITIZED_DEST_DIR}.sh"
+    local SCRIPT_FILE="${SYNC_SCRIPT_DIR}/sync_${REMOTE_HOST}_$(basename "${SOURCE_DIR}")_to_$(basename "${DEST_DIR}").sh"
     
     cat > "$SCRIPT_FILE" <<EOF
 #!/usr/bin/env bash
