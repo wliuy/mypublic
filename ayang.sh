@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0.8 (首页美化与颜色统一)
+# AYANG's Toolbox v2.0.9 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.0.8"
+readonly SCRIPT_VERSION="2.0.9"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -1678,9 +1678,9 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo " ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
-    echo " ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
-    echo " ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
+    echo "╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗  ╔═╗  ╦ ╦"
+    echo "╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦  ╚═╗  ╠═╣"
+    echo "╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝o ╚═╝  ╩ ╩"
     # 获取远程版本号
     local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2 | tr -d '[:space:]\r')
     local current_version="${SCRIPT_VERSION}"
