@@ -1689,7 +1689,7 @@ function main_menu() {
 
     # 显示版本信息和提示语
     echo -e "${gl_kjlan} AYANG's Toolbox v${current_version}${gl_bai}"
-    echo -e "${gl_kjlan}命令行输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
+    echo -e "${gl_kjlan} 输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
 
     echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
