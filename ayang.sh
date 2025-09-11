@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.6.0 (增加定时文件夹备份功能)
+# AYANG's Toolbox v1.6.1 (增加定时文件夹备份功能)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.6.0"
+readonly SCRIPT_VERSION="1.6.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -253,7 +253,7 @@ function system_tools() {
             esac
         done
     }
-    # 新的定时任务管理函数
+    # 定时任务管理函数
     function cron_management() {
         while true; do
             clear
@@ -588,7 +588,7 @@ EOF
         # --- 主菜单 ---
         while true; do
             clear
-            echo -e "${gl_kjlan}========================================="
+            echo -e "${gl_bai}========================================="
             echo -e "      文件同步管理工具"
             echo -e "=========================================${gl_bai}"
             echo -e "${gl_lv}1.    查看已添加的同步任务${gl_bai}"
@@ -614,7 +614,7 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1. ROOT密码登录模式"; echo "2. 修改登录密码"; echo "3. 开放所有端口"; echo "4. 修改SSH连接端口"; echo "5. 优化DNS地址"; echo "6. 查看端口占用状态"; echo "7. 修改虚拟内存大小"; echo "8. 系统时区调整"; echo "9. 定时任务管理"; echo "10. 定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0. 返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "1.    ROOT密码登录模式"; echo "2.    修改登录密码"; echo "3.    开放所有端口"; echo "4.    修改SSH连接端口"; echo "5.    优化DNS地址"; echo "6.    查看端口占用状态"; echo "7.    修改虚拟内存大小"; echo "8.    系统时区调整"; echo "9.    定时任务管理"; echo "10.   定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo "0.    返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -1235,6 +1235,13 @@ EOF
             echo -e "📅 添加定时任务（每天 0 点执行）..."
             ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ; echo "$cron_job" ) | crontab -
 
+            if [ $? -eq 0 ]; then
+                echo -e "  ✅ Cron 任务已成功设置！"
+                echo -e "  任务将在每天 ${CRON_HOUR} 点自动执行。"
+            else
+                echo -e "  ${gl_hong}❌ 添加 Cron 任务失败。请手动检查并添加。${gl_bai}"
+            fi
+
             echo -e "\n🎉 配置完成！每天 0 点将自动备份 Memos 数据到 ${remote_host}。"
         }
         
@@ -1326,8 +1333,8 @@ EOF
             clear
             echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
             echo -e "----------------------------------------"
-            if [ -f "${LOG_FILE}" ]; then
-                tail -n 50 "${LOG_FILE}"
+            if [ -f "$LOG_FILE" ]; then
+                tail -n 50 "$LOG_FILE"
             else
                 echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
             fi
