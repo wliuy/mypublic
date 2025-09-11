@@ -576,13 +576,13 @@ EOF
             echo -e "${gl_kjlan}========================================="
             echo -e "${gl_bai}       文件同步管理工具"
             echo -e "${gl_kjlan}=========================================${gl_bai}"
-            echo -e "${gl_lv}1.     ${gl_bai}查看已添加的同步任务"
-            echo -e "${gl_lv}2.     ${gl_bai}添加新的同步任务"
-            echo -e "${gl_lv}3.     ${gl_bai}立即执行同步任务"
-            echo -e "${gl_lv}4.     ${gl_bai}删除同步任务"
-            echo -e "${gl_lv}5.     ${gl_bai}查看同步日志"
+            echo -e "${gl_kjlan}1.     ${gl_bai}查看已添加的同步任务"
+            echo -e "${gl_kjlan}2.     ${gl_bai}添加新的同步任务"
+            echo -e "${gl_kjlan}3.     ${gl_bai}立即执行同步任务"
+            echo -e "${gl_kjlan}4.     ${gl_bai}删除同步任务"
+            echo -e "${gl_kjlan}5.     ${gl_bai}查看同步日志"
             echo -e "-----------------------------------------"
-            echo -e "${gl_hong}0.     ${gl_bai}返回上一级菜单"
+            echo -e "${gl_kjlan}0.     ${gl_bai}返回上一级菜单"
             echo -e "-----------------------------------------"
 
             read -p "$(echo -e "${gl_kjlan}请输入你的选择: ${gl_bai}")" choice
@@ -787,16 +787,16 @@ function app_management() {
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             
             if does_watchtower_exist; then
-                echo -e "${gl_lv}1.     ${gl_bai}重新安装/更新配置"
+                echo -e "${gl_kjlan}1.     ${gl_bai}重新安装/更新配置"
             else
-                echo -e "${gl_lv}1.     ${gl_bai}安装 Watchtower"
+                echo -e "${gl_kjlan}1.     ${gl_bai}安装 Watchtower"
             fi
-            echo -e "${gl_lv}2.     ${gl_bai}添加监控应用"
-            echo -e "${gl_lv}3.     ${gl_bai}移除监控应用"
-            echo -e "${gl_lv}4.     ${gl_bai}修改监控频率"
-            echo -e "${gl_lv}5.     ${gl_bai}卸载 Watchtower"
+            echo -e "${gl_kjlan}2.     ${gl_bai}添加监控应用"
+            echo -e "${gl_kjlan}3.     ${gl_bai}移除监控应用"
+            echo -e "${gl_kjlan}4.     ${gl_bai}修改监控频率"
+            echo -e "${gl_kjlan}5.     ${gl_bai}卸载 Watchtower"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            echo -e "${gl_hong}0.     ${gl_bai}返回上一级菜单"
+            echo -e "${gl_kjlan}0.     ${gl_bai}返回上一级菜单"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " wt_choice
             case $wt_choice in
