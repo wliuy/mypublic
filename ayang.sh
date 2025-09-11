@@ -1678,9 +1678,9 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo "╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗  ╔═╗  ╦ ╦"
-    echo "╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦  ╚═╗  ╠═╣"
-    echo "╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝o ╚═╝  ╩ ╩"
+    echo "╔═╗ ╦ ╦ ╔═╗ ╔╗╔ ╔═╗  ╔═╗ ╦ ╦"
+    echo "╠═╣ ╚╦╝ ╠═╣ ║╚╣ ║ ╦  ╚═╗ ╠═╣"
+    echo "╩ ╩  ╩  ╩ ╩ ╩ ╩ ╚═╝o ╚═╝ ╩ ╩"
     # 获取远程版本号
     local remote_version=$(curl -sL "${SCRIPT_URL}" | grep 'readonly SCRIPT_VERSION=' | head -n 1 | cut -d'"' -f2 | tr -d '[:space:]\r')
     local current_version="${SCRIPT_VERSION}"
