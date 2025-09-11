@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.6.1 (增加定时文件夹备份功能)
+# AYANG's Toolbox v1.6.2 (美化定时文件夹备份菜单)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.6.1"
+readonly SCRIPT_VERSION="1.6.2"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
@@ -591,13 +591,13 @@ EOF
             echo -e "${gl_bai}========================================="
             echo -e "      文件同步管理工具"
             echo -e "=========================================${gl_bai}"
-            echo -e "${gl_lv}1.    查看已添加的同步任务${gl_bai}"
-            echo -e "${gl_lv}2.    添加新的同步任务${gl_bai}"
-            echo -e "${gl_lv}3.    立即执行同步任务${gl_bai}"
-            echo -e "${gl_lv}4.    删除同步任务${gl_bai}"
-            echo -e "${gl_lv}5.    查看同步日志${gl_bai}"
+            echo -e "${gl_lv}1.    ${gl_bai}查看已添加的同步任务"
+            echo -e "${gl_lv}2.    ${gl_bai}添加新的同步任务"
+            echo -e "${gl_lv}3.    ${gl_bai}立即执行同步任务"
+            echo -e "${gl_lv}4.    ${gl_bai}删除同步任务"
+            echo -e "${gl_lv}5.    ${gl_bai}查看同步日志"
             echo -e "-----------------------------------------"
-            echo -e "${gl_hong}0.    返回上一级菜单${gl_bai}"
+            echo -e "${gl_hong}0.    ${gl_bai}返回上一级菜单"
             echo -e "-----------------------------------------"
 
             read -p "$(echo -e "${gl_kjlan}请输入你的选择: ${gl_bai}")" choice
@@ -938,7 +938,7 @@ function app_management() {
 
                         read -p "请输入具体的 ${unit_name} 数 (必须是大于0的整数): " number
                         if [[ ! "$number" =~ ^[1-9][0-9]*$ ]]; then
-                            echo -e "\n${gl_hong}输入无效，操作取消。${gl_bai}"
+                            echo -e "\n${gl_hong}输入无效，操作已取消。${gl_bai}"
                         else
                             local new_interval=$((number * multiplier))
                             local monitored_list_for_update="$MONITORED_IMAGES"
@@ -1273,7 +1273,7 @@ EOF
                 if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
                     ( crontab -l 2>/dev/null | grep -v "${sync_script_path}" ) | crontab -
                     rm -f "${sync_script_path}"
-                    echo -e "${gl_lv}✅ 备份配置已成功删除。${gl_bai}"
+                    echo -e "\n${gl_lv}✅ 备份配置已成功删除。${gl_bai}"
                 else
                     echo -e "${gl_huang}操作已取消。${gl_bai}"
                 fi
@@ -1332,13 +1332,13 @@ EOF
         function view_memos_sync_log() {
             clear
             echo -e "${gl_kjlan}Memos 备份日志${gl_bai}"
-            echo -e "----------------------------------------"
+            echo "----------------------------------------"
             if [ -f "$LOG_FILE" ]; then
                 tail -n 50 "$LOG_FILE"
             else
                 echo -e "${gl_huang}日志文件 ${LOG_FILE} 不存在，请先执行备份任务。${gl_bai}"
             fi
-            echo -e "----------------------------------------"
+            press_any_key_to_continue
         }
 
         while true; do
