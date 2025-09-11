@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v1.5.0 (修复Watchtower菜单和颜色问题, 升级Watchtower管理功能)
+# AYANG's Toolbox v1.5.1 (修复Watchtower菜单和颜色问题, 升级Watchtower管理功能)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="1.5.0"
+readonly SCRIPT_VERSION="1.5.1"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 (源于 kejilion.sh) ---
