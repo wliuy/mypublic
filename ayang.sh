@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0.6 (首页美化与颜色统一)
+# AYANG's Toolbox v2.0.7 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.0.6"
+readonly SCRIPT_VERSION="2.0.7"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -599,7 +599,7 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.     ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.     修改登录密码"; echo -e "${gl_lv}3${gl_bai}.     开放所有端口"; echo -e "${gl_lv}4${gl_bai}.     修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.     优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.     查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.     修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.     系统时区调整"; echo -e "${gl_lv}9${gl_bai}.     定时任务管理"; echo -e "${gl_lv}10${gl_bai}.     定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.     返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.     ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.     修改登录密码"; echo -e "${gl_lv}3${gl_bai}.     开放所有端口"; echo -e "${gl_lv}4${gl_bai}.     修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.     优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.     查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.     修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.     系统时区调整"; echo -e "${gl_lv}9${gl_bai}.     定时任务管理"; echo -e "${gl_lv}10${gl_bai}.    定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.     返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -1532,7 +1532,7 @@ EOF
     
     while true; do
         clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
-        echo -e "${gl_lv}1.     ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.     ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.     ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.     ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.     ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.     ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.     ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.     ${gl_bai}更换Docker源"; echo -e "${gl_lv}20.     ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}0.     ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo -e "${gl_lv}1.     ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.     ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.     ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.     ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.     ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.     ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.     ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.     ${gl_bai}更换Docker源"; echo -e "${gl_lv}-1.    ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}0.     ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -1690,11 +1690,11 @@ function main_menu() {
     # 显示版本信息和提示语
     echo -e "${gl_kjlan}AYANG's Toolbox v${current_version}${gl_bai}"
     if [ "$current_version" == "$remote_version" ]; then
-        echo -e "${gl_lv}      (已是最新版)${gl_bai}"
+        echo -e "${gl_lv}     (最新版)${gl_bai}"
     else
-        echo -e "${gl_huang}      (发现新版本: v${remote_version})${gl_bai}"
+        echo -e "${gl_huang}     (发现新版本: v${remote_version})${gl_bai}"
     fi
-    echo -e "${gl_huang}命令行输入y可快速启动脚本${gl_bai}"
+    echo -e "${gl_kjlan}命令行输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
 
     echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     echo -e "${gl_lv}1${gl_bai}.     系统信息查询"
