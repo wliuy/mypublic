@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.0.7 (首页美化与颜色统一)
+# AYANG's Toolbox v2.0.8 (首页美化与颜色统一)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.0.7"
+readonly SCRIPT_VERSION="2.0.8"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -1678,9 +1678,9 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo "╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
-    echo "╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
-    echo "╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
+    echo " ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
+    echo " ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
+    echo " ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
     echo -e "${gl_bai}"
     
     # 获取远程版本号
@@ -1688,26 +1688,21 @@ function main_menu() {
     local current_version="${SCRIPT_VERSION}"
 
     # 显示版本信息和提示语
-    echo -e "${gl_kjlan}AYANG's Toolbox v${current_version}${gl_bai}"
-    if [ "$current_version" == "$remote_version" ]; then
-        echo -e "${gl_lv}     (最新版)${gl_bai}"
-    else
-        echo -e "${gl_huang}     (发现新版本: v${remote_version})${gl_bai}"
-    fi
+    echo -e "${gl_kjlan} AYANG's Toolbox v${current_version}${gl_bai}"
     echo -e "${gl_kjlan}命令行输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
 
     echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
-    echo -e "${gl_lv}1${gl_bai}.     系统信息查询"
-    echo -e "${gl_lv}2${gl_bai}.     系统更新"
-    echo -e "${gl_lv}3${gl_bai}.     系统清理"
-    echo -e "${gl_lv}4${gl_bai}.     系统工具"
-    echo -e "${gl_lv}5${gl_bai}.     应用管理"
-    echo -e "${gl_lv}6${gl_bai}.     Docker管理"
+    echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
+    echo -e "${gl_lv}2${gl_bai}.    系统更新"
+    echo -e "${gl_lv}3${gl_bai}.    系统清理"
+    echo -e "${gl_lv}4${gl_bai}.    系统工具"
+    echo -e "${gl_lv}5${gl_bai}.    应用管理"
+    echo -e "${gl_lv}6${gl_bai}.    Docker管理"
     echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
-    echo -e "${gl_lv}00${gl_bai}.    更新脚本"
+    echo -e "${gl_lv}00${gl_bai}.   更新脚本"
     echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
-    echo -e "${gl_kjlan}-0${gl_bai}.    卸载脚本"
-    echo -e "${gl_kjlan}0${gl_bai}.     退出脚本"
+    echo -e "${gl_kjlan}-0${gl_bai}.   卸载脚本"
+    echo -e "${gl_kjlan}0${gl_bai}.    退出脚本"
     echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     read -p "请输入你的选择: " choice
 }
