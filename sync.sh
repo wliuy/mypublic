@@ -10,6 +10,9 @@
 SYNC_SCRIPT_DIR="$HOME/sync_scripts"
 LOG_FILE="/var/log/auto_sync.log"
 
+# 脚本版本号
+readonly SCRIPT_VERSION="1.0.0"
+
 gl_hong='\033[31m'
 gl_lv='\033[32m'
 gl_huang='\033[33m'
@@ -280,7 +283,7 @@ function view_sync_log() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}========================================="
-    echo -e "        通用文件同步管理工具"
+    echo -e "      通用文件同步管理工具 v${SCRIPT_VERSION}"
     echo -e "=========================================${gl_bai}"
     echo -e "${gl_lv}1.    查看已添加的同步任务${gl_bai}"
     echo -e "${gl_lv}2.    添加新的同步任务${gl_bai}"
