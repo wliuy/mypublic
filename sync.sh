@@ -113,9 +113,9 @@ function add_sync_task() {
 
     # 创建同步脚本 (新的命名格式)
     mkdir -p "$SYNC_SCRIPT_DIR"
-    local SOURCE_FOLDER_NAME=$(basename "${SOURCE_DIR}")
-    local DEST_FOLDER_NAME=$(basename "${DEST_DIR}")
-    local SCRIPT_FILE="${SYNC_SCRIPT_DIR}/sync_${REMOTE_HOST}_${SOURCE_FOLDER_NAME}_to_${DEST_FOLDER_NAME}.sh"
+    local SANITIZED_SOURCE_DIR=$(echo "${SOURCE_DIR}" | sed 's/\//_/g')
+    local SANITIZED_DEST_DIR=$(echo "${DEST_DIR}" | sed 's/\//_/g')
+    local SCRIPT_FILE="${SYNC_SCRIPT_DIR}/sync_${REMOTE_HOST}_${SANITIZED_SOURCE_DIR}_→_${SANITIZED_DEST_DIR}.sh"
     
     cat > "$SCRIPT_FILE" <<EOF
 #!/usr/bin/env bash
@@ -131,9 +131,9 @@ ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p '${DEST_DIR}'"
 rsync -avz --delete -e "ssh -p ${REMOTE_PORT}" "${SOURCE_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${DEST_DIR}"
 
 if [ \$? -eq 0 ]; then
-    echo "同步成功: \$(date)"
+    echo "同步成功: \$(date)"
 else
-    echo "同步失败: \$(date)"
+    echo "同步失败: \$(date)"
 fi
 EOF
 
