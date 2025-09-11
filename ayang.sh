@@ -1678,9 +1678,9 @@ function uninstall_script() {
 function main_menu() {
     clear
     echo -e "${gl_kjlan}"
-    echo "  ╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
-    echo "  ╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
-    echo "  ╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
+    echo "╔═╗  ╦ ╦  ╔═╗  ╔╗╔  ╔═╗"
+    echo "╠═╣  ╚╦╝  ╠═╣  ║╚╣  ║ ╦"
+    echo "╩ ╩   ╩   ╩ ╩  ╩ ╩  ╚═╝"
     echo -e "${gl_bai}"
     
     # 获取远程版本号
@@ -1696,19 +1696,19 @@ function main_menu() {
     fi
     echo -e "${gl_huang}命令行输入y可快速启动脚本${gl_bai}"
 
-    echo -e "${gl_hong}-------------------------${gl_bai}"
+    echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     echo -e "${gl_lv}1${gl_bai}.     系统信息查询"
     echo -e "${gl_lv}2${gl_bai}.     系统更新"
     echo -e "${gl_lv}3${gl_bai}.     系统清理"
     echo -e "${gl_lv}4${gl_bai}.     系统工具"
     echo -e "${gl_lv}5${gl_bai}.     应用管理"
     echo -e "${gl_lv}6${gl_bai}.     Docker管理"
-    echo -e "${gl_hong}-------------------------${gl_bai}"
+    echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     echo -e "${gl_lv}00${gl_bai}.    更新脚本"
-    echo -e "${gl_hong}-------------------------${gl_bai}"
+    echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     echo -e "${gl_kjlan}-0${gl_bai}.    卸载脚本"
     echo -e "${gl_kjlan}0${gl_bai}.     退出脚本"
-    echo -e "${gl_hong}-------------------------${gl_bai}"
+    echo -e "${gl_hong}---------------------${gl_kjlan}----${gl_bai}"
     read -p "请输入你的选择: " choice
 }
 
