@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.1.3 (菜单项目对齐优化)
+# AYANG's Toolbox v2.1.4 (菜单项目对齐优化)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.1.3"
+readonly SCRIPT_VERSION="2.1.4"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
