@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.1.2 (优化Memos菜单返回逻辑)
+# AYANG's Toolbox v2.2.0 (优化Memos菜单返回逻辑)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.1.2"
+readonly SCRIPT_VERSION="2.2.0"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -112,8 +112,8 @@ system_info() {
     echo -e "${gl_kjlan}物理内存:     ${gl_bai}$mem_info"
     echo -e "${gl_kjlan}硬盘占用:     ${gl_bai}$disk_info"
     echo -e "${gl_kjlan}-------------"
-    if [ -n "$ipv4_address" ]; then echo -e "${gl_kjlan}IPv4地址:      ${gl_bai}$ipv4_address"; fi
-    if [ -n "$ipv6_address" ]; then echo -e "${gl_kjlan}IPv6地址:      ${gl_bai}$ipv6_address"; fi
+    if [ -n "$ipv4_address" ]; then echo -e "${gl_kjlan}IPv4地址:     ${gl_bai}$ipv4_address"; fi
+    if [ -n "$ipv6_address" ]; then echo -e "${gl_kjlan}IPv6地址:     ${gl_bai}$ipv6_address"; fi
     echo -e "${gl_kjlan}运营商:       ${gl_bai}$isp_info"
     echo -e "${gl_kjlan}地理位置:     ${gl_bai}$country $city"
     echo -e "${gl_kjlan}-------------"
@@ -180,7 +180,7 @@ system_tools() {
     }
     set_dns_ui() {
         while true; do
-            clear; echo "优化DNS地址"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo "当前DNS地址"; cat /etc/resolv.conf; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo ""; echo "1. 国外DNS (Google/Cloudflare)"; echo "2. 国内DNS (阿里/腾讯)"; echo "3. 手动编辑"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo "0. 返回"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"
+            clear; echo "优化DNS地址"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo "当前DNS地址"; cat /etc/resolv.conf; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo ""; echo "1.  国外DNS (Google/Cloudflare)"; echo "2.  国内DNS (阿里/腾讯)"; echo "3.  手动编辑"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"; echo "0.  返回"; echo -e "${gl_hong}-----------------------------------${gl_kjlan}-----${gl_bai}"
             read -p "请输入你的选择: " dns_choice
             local dns_config=""
             case "$dns_choice" in
@@ -210,7 +210,7 @@ system_tools() {
         while true; do
             clear; echo "设置虚拟内存";
             local swap_info=$(free -m | awk 'NR==3{used=$3; total=$2; if (total == 0) {percentage=0} else {percentage=used*100/total}; printf "%dM/%dM (%d%%)", used, total, percentage}')
-            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M        2. 分配2048M"; echo "3. 分配4096M        4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo -e "当前虚拟内存: ${gl_huang}$swap_info${gl_bai}"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 分配1024M         2. 分配2048M"; echo "3. 分配4096M         4. 自定义大小"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " swap_choice
             case "$swap_choice" in
                 1) _do_add_swap 1024; break ;;
@@ -230,7 +230,7 @@ system_tools() {
             if grep -q 'Alpine' /etc/issue 2>/dev/null; then install tzdata; cp /usr/share/zoneinfo/${1} /etc/localtime; else timedatectl set-timezone ${1}; fi
         }
         while true; do
-            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间         2.  中国香港时间"; echo "3.  日本东京时间         4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间         12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间         22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
+            clear; echo "系统时间信息"; echo "当前系统时区：$(_current_timezone)"; echo "当前系统时间：$(date +"%Y-%m-%d %H:%M:%S")"; echo ""; echo "时区切换"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "亚洲"; echo "1.  中国上海时间       2.  中国香港时间"; echo "3.  日本东京时间       4.  韩国首尔时间"; echo "5.  新加坡时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "欧洲"; echo "11. 英国伦敦时间       12. 法国巴黎时间"; echo "13. 德国柏林时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "美洲"; echo "21. 美国西部时间       22. 美国东部时间"; echo "23. 加拿大时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "31. UTC全球标准时间"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "0.  返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}";
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) _set_timedate Asia/Shanghai ;;
@@ -276,11 +276,11 @@ system_tools() {
             echo "当前定时任务列表："
             crontab -l 2>/dev/null || echo "（无任务）"
             echo -e "${gl_hong}------------------------${gl_bai}"
-            echo -e "${gl_lv}1.        ${gl_bai}添加定时任务"
-            echo -e "${gl_lv}2.        ${gl_bai}删除定时任务"
-            echo -e "${gl_lv}3.        ${gl_bai}编辑定时任务"
+            echo -e "${gl_lv}1.    ${gl_bai}添加定时任务"
+            echo -e "${gl_lv}2.    ${gl_bai}删除定时任务"
+            echo -e "${gl_lv}3.    ${gl_bai}编辑定时任务"
             echo -e "${gl_hong}------------------------${gl_bai}"
-            echo -e "${gl_hong}0.        ${gl_bai}返回上一级选单"
+            echo -e "${gl_hong}0.    ${gl_bai}返回上一级选单"
             echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " cron_choice
 
@@ -384,9 +384,9 @@ system_tools() {
             echo -e "      确认信息"
             echo -e "----------------------------------------${gl_bai}"
             echo -e "${gl_kjlan}本地源目录: ${gl_bai}${SOURCE_DIR}"
-            echo -e "${gl_kjlan}远程目标:  ${gl_bai}${REMOTE_USER}@${REMOTE_HOST}:${DEST_DIR}"
-            echo -e "${gl_kjlan}SSH端口:   ${gl_bai}${REMOTE_PORT}"
-            echo -e "${gl_kjlan}同步频率:  ${gl_bai}每天 ${CRON_HOUR} 点"
+            echo -e "${gl_kjlan}远程目标:   ${gl_bai}${REMOTE_USER}@${REMOTE_HOST}:${DEST_DIR}"
+            echo -e "${gl_kjlan}SSH端口:    ${gl_bai}${REMOTE_PORT}"
+            echo -e "${gl_kjlan}同步频率:   ${gl_bai}每天 ${CRON_HOUR} 点"
             echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
 
             read -p "$(echo -e "${gl_huang}请确认信息无误，是否继续？ (y/N): ${gl_bai}")" confirm
@@ -478,11 +478,11 @@ EOF
                 fi
                 
                 echo -e "${gl_lv}--- 任务 ${i} ---${gl_bai}"
-                echo -e "${gl_kjlan}命名:    ${gl_bai}$(basename "${script}")"
-                echo -e "${gl_kjlan}文件:    ${gl_bai}${script}"
-                echo -e "${gl_kjlan}来源:    ${gl_bai}${source_dir}"
-                echo -e "${gl_kjlan}目标:    ${gl_bai}${remote_info}"
-                echo -e "${gl_kjlan}频率:    ${gl_bai}每天 ${cron_time}"
+                echo -e "${gl_kjlan}命名:   ${gl_bai}$(basename "${script}")"
+                echo -e "${gl_kjlan}文件:   ${gl_bai}${script}"
+                echo -e "${gl_kjlan}来源:   ${gl_bai}${source_dir}"
+                echo -e "${gl_kjlan}目标:   ${gl_bai}${remote_info}"
+                echo -e "${gl_kjlan}频率:   ${gl_bai}每天 ${cron_time}"
                 echo -e "----------------------------------------"
                 i=$((i+1))
             done
@@ -582,15 +582,15 @@ EOF
         while true; do
             clear
             echo -e "${gl_kjlan}========================================="
-            echo -e "${gl_bai}      文件同步管理工具"
+            echo -e "${gl_bai}           文件同步管理工具"
             echo -e "${gl_kjlan}=========================================${gl_bai}"
-            echo -e "${gl_kjlan}1.        ${gl_bai}查看已添加的同步任务"
-            echo -e "${gl_kjlan}2.        ${gl_bai}添加新的同步任务"
-            echo -e "${gl_kjlan}3.        ${gl_bai}立即执行同步任务"
-            echo -e "${gl_kjlan}4.        ${gl_bai}删除同步任务"
-            echo -e "${gl_kjlan}5.        ${gl_bai}查看同步日志"
+            echo -e "${gl_kjlan}1.    ${gl_bai}查看已添加的同步任务"
+            echo -e "${gl_kjlan}2.    ${gl_bai}添加新的同步任务"
+            echo -e "${gl_kjlan}3.    ${gl_bai}立即执行同步任务"
+            echo -e "${gl_kjlan}4.    ${gl_bai}删除同步任务"
+            echo -e "${gl_kjlan}5.    ${gl_bai}查看同步日志"
             echo -e "-----------------------------------------"
-            echo -e "${gl_kjlan}0.        ${gl_bai}返回上一级菜单"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
             echo -e "-----------------------------------------"
 
             read -p "$(echo -e "${gl_kjlan}请输入你的选择: ${gl_bai}")" choice
@@ -607,7 +607,7 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.    ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.    修改登录密码"; echo -e "${gl_lv}3${gl_bai}.    开放所有端口"; echo -e "${gl_lv}4${gl_bai}.    修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.    优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.    查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.    修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.    系统时区调整"; echo -e "${gl_lv}9${gl_bai}.    定时任务管理"; echo -e "${gl_lv}10${gl_bai}.    定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.    返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1.    ${gl_bai}ROOT密码登录模式"; echo -e "${gl_lv}2.    ${gl_bai}修改登录密码"; echo -e "${gl_lv}3.    ${gl_bai}开放所有端口"; echo -e "${gl_lv}4.    ${gl_bai}修改SSH连接端口"; echo -e "${gl_lv}5.    ${gl_bai}优化DNS地址"; echo -e "${gl_lv}6.    ${gl_bai}查看端口占用状态"; echo -e "${gl_lv}7.    ${gl_bai}修改虚拟内存大小"; echo -e "${gl_lv}8.    ${gl_bai}系统时区调整"; echo -e "${gl_lv}9.    ${gl_bai}定时任务管理"; echo -e "${gl_lv}10.   ${gl_bai}定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -790,22 +790,22 @@ app_management() {
                 echo -e "  ${gl_huang}未安装${gl_bai}"
             fi
             echo -e "\n${gl_kjlan}监控详情：${gl_bai}"
-            echo -e "  监控中     : ${gl_kjlan}${MONITORED_IMAGES:-无}${gl_bai}"
-            echo -e "  未监控     : ${UNMONITORED_IMAGES:-无}"
-            echo -e "  更新频率   : ${FORMATTED_INTERVAL:-无}"
+            echo -e "  监控中      : ${gl_kjlan}${MONITORED_IMAGES:-无}${gl_bai}"
+            echo -e "  未监控      : ${UNMONITORED_IMAGES:-无}"
+            echo -e "  更新频率    : ${FORMATTED_INTERVAL:-无}"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             
             if does_watchtower_exist; then
-                echo -e "${gl_kjlan}1.        ${gl_bai}重新安装/更新配置"
+                echo -e "${gl_kjlan}1.    ${gl_bai}重新安装/更新配置"
             else
-                echo -e "${gl_kjlan}1.        ${gl_bai}安装 Watchtower"
+                echo -e "${gl_kjlan}1.    ${gl_bai}安装 Watchtower"
             fi
-            echo -e "${gl_kjlan}2.        ${gl_bai}添加监控应用"
-            echo -e "${gl_kjlan}3.        ${gl_bai}移除监控应用"
-            echo -e "${gl_kjlan}4.        ${gl_bai}修改监控频率"
-            echo -e "${gl_kjlan}5.        ${gl_bai}卸载 Watchtower"
+            echo -e "${gl_kjlan}2.    ${gl_bai}添加监控应用"
+            echo -e "${gl_kjlan}3.    ${gl_bai}移除监控应用"
+            echo -e "${gl_kjlan}4.    ${gl_bai}修改监控频率"
+            echo -e "${gl_kjlan}5.    ${gl_bai}卸载 Watchtower"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
-            echo -e "${gl_kjlan}0.        ${gl_bai}返回上一级菜单"
+            echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
             echo -e "${gl_hong}----------------------------------------${gl_bai}"
             read -p "请输入你的选择: " wt_choice
             case $wt_choice in
@@ -1378,12 +1378,12 @@ EOF
                     echo "$configured_servers" | sed 's/^/  /'
                 fi
                 echo -e "${gl_hong}----------------------------------------${gl_bai}"
-                echo "1. 添加备份配置"
-                echo "2. 删除备份配置"
-                echo "3. 立即备份所有"
-                echo "4. 查看备份日志"
+                echo "1.  添加备份配置"
+                echo "2.  删除备份配置"
+                echo "3.  立即备份所有"
+                echo "4.  查看备份日志"
                 echo -e "${gl_hong}----------------------------------------${gl_bai}"
-                echo "0. 返回上一级菜单"
+                echo "0.  返回上一级菜单"
                 echo -e "${gl_hong}----------------------------------------${gl_bai}"
                 read -p "请输入你的选择: " sync_choice
                 case $sync_choice in
@@ -1480,10 +1480,10 @@ EOF
         echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
         echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
         echo "安装&管理:"
-        echo -e "  $(get_app_color 'lucky')1.  Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')2.  FileBrowser (文件管理)${gl_bai}"
-        echo -e "  $(get_app_color 'memos')3.  Memos (轻量笔记)${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')4.  Watchtower (容器自动更新)${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')1.   Lucky 反代${gl_bai}"
+        echo -e "  $(get_app_color 'filebrowser')2.   FileBrowser (文件管理)${gl_bai}"
+        echo -e "  $(get_app_color 'memos')3.   Memos (轻量笔记)${gl_bai}"
+        echo -e "  $(get_app_color 'watchtower')4.   Watchtower (容器自动更新)${gl_bai}"
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
@@ -1492,7 +1492,7 @@ EOF
         echo -e "  $(get_app_color 'memos')-3.  卸载 Memos${gl_bai}"
         echo -e "  $(get_app_color 'watchtower')-4.  卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo -e "${gl_kjlan}  0.  ${gl_bai}返回主菜单"
+        echo -e "${gl_kjlan}  0.   ${gl_bai}返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
@@ -1545,7 +1545,7 @@ EOF
     docker_ps() {
         while true; do
             clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
-            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}1.        ${gl_bai}创建新的容器"; echo -e "${gl_lv}2.        ${gl_bai}启动指定容器"; echo -e "${gl_lv}3.        ${gl_bai}停止指定容器"; echo -e "${gl_lv}4.        ${gl_bai}删除指定容器"; echo -e "${gl_lv}5.        ${gl_bai}重启指定容器"; echo -e "${gl_lv}6.        ${gl_bai}启动所有容器"; echo -e "${gl_lv}7.        ${gl_bai}停止所有容器"; echo -e "${gl_lv}8.        ${gl_bai}删除所有容器"; echo -e "${gl_lv}9.        ${gl_bai}重启所有容器"; echo -e "${gl_lv}11.        ${gl_bai}进入指定容器"; echo -e "${gl_lv}12.        ${gl_bai}查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.        ${gl_bai}返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}1.    ${gl_bai}创建新的容器"; echo -e "${gl_lv}2.    ${gl_bai}启动指定容器"; echo -e "${gl_lv}3.    ${gl_bai}停止指定容器"; echo -e "${gl_lv}4.    ${gl_bai}删除指定容器"; echo -e "${gl_lv}5.    ${gl_bai}重启指定容器"; echo -e "${gl_lv}6.    ${gl_bai}启动所有容器"; echo -e "${gl_lv}7.    ${gl_bai}停止所有容器"; echo -e "${gl_lv}8.    ${gl_bai}删除所有容器"; echo -e "${gl_lv}9.    ${gl_bai}重启所有容器"; echo -e "${gl_lv}11.   ${gl_bai}进入指定容器"; echo -e "${gl_lv}12.   ${gl_bai}查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.    ${gl_bai}返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入创建命令: " dockername; $dockername ;;
@@ -1566,7 +1566,7 @@ EOF
     }
     docker_image() {
         while true; do
-            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像       3. 删除指定镜像"; echo "2. 更新指定镜像       4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像         3. 删除指定镜像"; echo "2. 更新指定镜像         4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
@@ -1581,7 +1581,7 @@ EOF
     docker_network() {
         while true; do
             clear; echo "Docker网络列表"; echo -e "${gl_hong}------------------------------------------------------------${gl_bai}"; docker network ls; echo ""
-            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1.  创建网络"; echo "2.  加入网络"; echo "3.  退出网络"; echo "4.  删除网络"; echo "0.  返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新网络名: " network; docker network create $network ;;
@@ -1595,7 +1595,7 @@ EOF
     }
     docker_volume() {
         while true; do
-            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1.  创建新卷"; echo "2.  删除指定卷"; echo "3.  删除所有未使用的卷"; echo "0.  返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
@@ -1609,7 +1609,7 @@ EOF
     
     while true; do
         clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
-        echo -e "${gl_lv}1.        ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.        ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.        ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.        ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.        ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.        ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.        ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.        ${gl_bai}更换Docker源"; echo -e "${gl_lv}-1.        ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"; echo -e "${gl_lv}0.        ${gl_bai}返回主菜单"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
+        echo -e "${gl_lv}1.    ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.    ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.    ${gl_bai}Docker容器管理     ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.    ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.    ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.    ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.    ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.    ${gl_bai}更换Docker源"; echo -e "${gl_lv}-1.   ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"; echo -e "${gl_lv}0.    ${gl_bai}返回主菜单"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -1767,17 +1767,17 @@ main_menu() {
     echo -e "${gl_kjlan} 输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
 
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
-    echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
-    echo -e "${gl_lv}2${gl_bai}.    系统更新"
-    echo -e "${gl_lv}3${gl_bai}.    系统清理"
-    echo -e "${gl_lv}4${gl_bai}.    系统工具"
-    echo -e "${gl_lv}5${gl_bai}.    应用管理"
-    echo -e "${gl_lv}6${gl_bai}.    Docker管理"
+    echo -e "${gl_lv}1.   ${gl_bai}系统信息查询"
+    echo -e "${gl_lv}2.   ${gl_bai}系统更新"
+    echo -e "${gl_lv}3.   ${gl_bai}系统清理"
+    echo -e "${gl_lv}4.   ${gl_bai}系统工具"
+    echo -e "${gl_lv}5.   ${gl_bai}应用管理"
+    echo -e "${gl_lv}6.   ${gl_bai}Docker管理"
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
-    echo -e "${gl_lv}00${gl_bai}.    更新脚本"
+    echo -e "${gl_lv}00.  ${gl_bai}更新脚本"
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
-    echo -e "${gl_kjlan}-0${gl_bai}.    卸载脚本"
-    echo -e "${gl_kjlan}0${gl_bai}.      退出脚本"
+    echo -e "${gl_kjlan}-0.  ${gl_bai}卸载脚本"
+    echo -e "${gl_kjlan}0.   ${gl_bai}退出脚本"
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
     read -p "请输入你的选择: " choice
 }
