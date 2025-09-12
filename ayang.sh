@@ -607,7 +607,7 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.      ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.      修改登录密码"; echo -e "${gl_lv}3${gl_bai}.      开放所有端口"; echo -e "${gl_lv}4${gl_bai}.      修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.      优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.      查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.      修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.      系统时区调整"; echo -e "${gl_lv}9${gl_bai}.      定时任务管理"; echo -e "${gl_lv}10${gl_bai}.      定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.      返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.      ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.      修改登录密码"; echo -e "${gl_lv}3${gl_bai}.      开放所有端口"; echo -e "${gl_lv}4${gl_bai}.      修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.      优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.      查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.      修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.      系统时区调整"; echo -e "${gl_lv}9${gl_bai}.      定时任务管理"; echo -e "${gl_lv}10${gl_bai}.     定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.      返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -779,7 +779,8 @@ app_management() {
             echo -e "${gl_kjlan}Watchtower 管理${gl_bai}"
             
             IFS=';' read -r MONITORED_IMAGES UNMONITORED_IMAGES CURRENT_INTERVAL_SECONDS FORMATTED_INTERVAL IS_MONITORING_ALL < <(get_watchtower_info)
-            echo -e "${gl_hong}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
+            echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
             echo -e "\n${gl_kjlan}Watchtower 状态：${gl_bai}"
             if docker ps --format "{{.Names}}" | grep -q "^$WATCHTOWER_CONTAINER_NAME$"; then
                 echo -e "  ${gl_lv}已安装并正在运行${gl_bai}"
@@ -1333,7 +1334,8 @@ EOF
     while true; do
         clear
         echo "Memos 管理"
-        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
+        echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
         local memos_installed_flag
         if docker ps -a --filter "name=^memos$" --format "{{.Names}}" | grep -q 'memos' &>/dev/null; then
             memos_installed_flag=true
@@ -1478,7 +1480,8 @@ EOF
     while true; do
         clear
         echo -e "应用管理"
-        echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
+        echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
         echo "安装&管理:"
         echo -e "  $(get_app_color 'lucky')1.  Lucky 反代${gl_bai}"
         echo -e "  $(get_app_color 'filebrowser')2.  FileBrowser (文件管理)${gl_bai}"
@@ -1492,7 +1495,7 @@ EOF
         echo -e "  $(get_app_color 'memos')-3.  卸载 Memos${gl_bai}"
         echo -e "  $(get_app_color 'watchtower')-4.  卸载 Watchtower${gl_bai}"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo -e "  0.  返回主菜单"
+        echo -e "${gl_kjlan}  0.  ${gl_bai}返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " app_choice
         case $app_choice in
