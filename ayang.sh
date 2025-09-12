@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 #
-# AYANG's Toolbox v2.1.2 (优化Memos菜单返回逻辑)
+# AYANG's Toolbox v2.1.3 (菜单项目对齐优化)
 #
 
 # --- 全局配置 ---
-readonly SCRIPT_VERSION="2.1.2"
+readonly SCRIPT_VERSION="2.1.3"
 readonly SCRIPT_URL="https://raw.githubusercontent.com/wliuy/mypublic/refs/heads/main/ayang.sh"
 
 # --- 颜色定义 ---
@@ -549,7 +549,7 @@ EOF
                 echo -e "${gl_hong}警告：此操作将永久删除脚本和定时任务。${gl_bai}"
                 read -p "$(echo -e "确定要删除任务 ${gl_hong}${script_to_delete}${gl_bai} 吗？ (y/N): ")" confirm
                 
-                if [[ "${confirm,,}" =~ ^(y|yes|1)$ ]]; then
+                if [[ "${confirm,,}" == "y" || "$confirm" == "1" ]]; then
                     sudo rm -f "$script_to_delete"
                     ( sudo crontab -l 2>/dev/null | grep -v "$script_to_delete" ) | sudo crontab -
                     echo -e "\n${gl_lv}✅ 任务已成功删除。${gl_bai}"
@@ -607,7 +607,20 @@ EOF
         done
     }
     while true; do
-        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_lv}1${gl_bai}.    ROOT密码登录模式"; echo -e "${gl_lv}2${gl_bai}.    修改登录密码"; echo -e "${gl_lv}3${gl_bai}.    开放所有端口"; echo -e "${gl_lv}4${gl_bai}.    修改SSH连接端口"; echo -e "${gl_lv}5${gl_bai}.    优化DNS地址"; echo -e "${gl_lv}6${gl_bai}.    查看端口占用状态"; echo -e "${gl_lv}7${gl_bai}.    修改虚拟内存大小"; echo -e "${gl_lv}8${gl_bai}.    系统时区调整"; echo -e "${gl_lv}9${gl_bai}.    定时任务管理"; echo -e "${gl_lv}10${gl_bai}.    定时文件夹备份"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; echo -e "${gl_hong}0${gl_bai}.    返回主菜单"; echo -e "${gl_hong}----------------------------------------${gl_bai}"
+        clear; echo "系统工具"; echo -e "${gl_hong}----------------------------------------${gl_bai}"; 
+        echo -e "${gl_lv}1.    ${gl_bai}ROOT密码登录模式"
+        echo -e "${gl_lv}2.    ${gl_bai}修改登录密码"
+        echo -e "${gl_lv}3.    ${gl_bai}开放所有端口"
+        echo -e "${gl_lv}4.    ${gl_bai}修改SSH连接端口"
+        echo -e "${gl_lv}5.    ${gl_bai}优化DNS地址"
+        echo -e "${gl_lv}6.    ${gl_bai}查看端口占用状态"
+        echo -e "${gl_lv}7.    ${gl_bai}修改虚拟内存大小"
+        echo -e "${gl_lv}8.    ${gl_bai}系统时区调整"
+        echo -e "${gl_lv}9.    ${gl_bai}定时任务管理"
+        echo -e "${gl_lv}10.   ${gl_bai}定时文件夹备份"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"; 
+        echo -e "${gl_hong}0.    ${gl_bai}返回主菜单"
+        echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " tool_choice
         case $tool_choice in
             1) clear; add_sshpasswd; press_any_key_to_continue ;;
@@ -1349,12 +1362,12 @@ EOF
             memos_installed_color="${gl_bai}"
         fi
 
-        echo -e "${memos_installed_color}1.    安装 Memos${gl_bai}"
-        echo -e "${gl_kjlan}2.    配置自动备份"
-        echo -e "${gl_kjlan}3.    查看备份日志"
-        echo -e "${memos_installed_color}4.    卸载 Memos${gl_bai}"
+        echo -e "${memos_installed_color}1.    ${gl_bai}安装 Memos"
+        echo -e "${gl_kjlan}2.    ${gl_bai}配置自动备份"
+        echo -e "${gl_kjlan}3.    ${gl_bai}查看备份日志"
+        echo -e "${memos_installed_color}4.    ${gl_bai}卸载 Memos"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
-        echo -e "${gl_kjlan}0.    返回上一级菜单"
+        echo -e "${gl_kjlan}0.    ${gl_bai}返回上一级菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         read -p "请输入你的选择: " memos_choice
         case $memos_choice in
@@ -1480,17 +1493,17 @@ EOF
         echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
         echo -e "${gl_kjlan}----------------------------------------${gl_bai}"
         echo "安装&管理:"
-        echo -e "  $(get_app_color 'lucky')1.  Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')2.  FileBrowser (文件管理)${gl_bai}"
-        echo -e "  $(get_app_color 'memos')3.  Memos (轻量笔记)${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')4.  Watchtower (容器自动更新)${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')1.  ${gl_bai}Lucky 反代"
+        echo -e "  $(get_app_color 'filebrowser')2.  ${gl_bai}FileBrowser (文件管理)"
+        echo -e "  $(get_app_color 'memos')3.  ${gl_bai}Memos (轻量笔记)"
+        echo -e "  $(get_app_color 'watchtower')4.  ${gl_bai}Watchtower (容器自动更新)"
         echo
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo "卸载:"
-        echo -e "  $(get_app_color 'lucky')-1.  卸载 Lucky 反代${gl_bai}"
-        echo -e "  $(get_app_color 'filebrowser')-2.  卸载 FileBrowser${gl_bai}"
-        echo -e "  $(get_app_color 'memos')-3.  卸载 Memos${gl_bai}"
-        echo -e "  $(get_app_color 'watchtower')-4.  卸载 Watchtower${gl_bai}"
+        echo -e "  $(get_app_color 'lucky')-1. ${gl_bai}卸载 Lucky 反代"
+        echo -e "  $(get_app_color 'filebrowser')-2. ${gl_bai}卸载 FileBrowser"
+        echo -e "  $(get_app_color 'memos')-3. ${gl_bai}卸载 Memos"
+        echo -e "  $(get_app_color 'watchtower')-4. ${gl_bai}卸载 Watchtower"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
         echo -e "${gl_kjlan}  0.  ${gl_bai}返回主菜单"
         echo -e "${gl_hong}----------------------------------------${gl_bai}"
@@ -1545,7 +1558,21 @@ EOF
     docker_ps() {
         while true; do
             clear; echo "Docker容器列表"; docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"; echo ""
-            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_lv}1.        ${gl_bai}创建新的容器"; echo -e "${gl_lv}2.        ${gl_bai}启动指定容器"; echo -e "${gl_lv}3.        ${gl_bai}停止指定容器"; echo -e "${gl_lv}4.        ${gl_bai}删除指定容器"; echo -e "${gl_lv}5.        ${gl_bai}重启指定容器"; echo -e "${gl_lv}6.        ${gl_bai}启动所有容器"; echo -e "${gl_lv}7.        ${gl_bai}停止所有容器"; echo -e "${gl_lv}8.        ${gl_bai}删除所有容器"; echo -e "${gl_lv}9.        ${gl_bai}重启所有容器"; echo -e "${gl_lv}11.        ${gl_bai}进入指定容器"; echo -e "${gl_lv}12.        ${gl_bai}查看容器日志"; echo -e "${gl_hong}------------------------${gl_bai}"; echo -e "${gl_hong}0.        ${gl_bai}返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "容器操作"; echo -e "${gl_hong}------------------------${gl_bai}"; 
+            echo -e "${gl_lv}1.  ${gl_bai}创建新的容器"
+            echo -e "${gl_lv}2.  ${gl_bai}启动指定容器"
+            echo -e "${gl_lv}3.  ${gl_bai}停止指定容器"
+            echo -e "${gl_lv}4.  ${gl_bai}删除指定容器"
+            echo -e "${gl_lv}5.  ${gl_bai}重启指定容器"
+            echo -e "${gl_lv}6.  ${gl_bai}启动所有容器"
+            echo -e "${gl_lv}7.  ${gl_bai}停止所有容器"
+            echo -e "${gl_lv}8.  ${gl_bai}删除所有容器"
+            echo -e "${gl_lv}9.  ${gl_bai}重启所有容器"
+            echo -e "${gl_lv}11. ${gl_bai}进入指定容器"
+            echo -e "${gl_lv}12. ${gl_bai}查看容器日志"
+            echo -e "${gl_hong}------------------------${gl_bai}"; 
+            echo -e "${gl_hong}0.  ${gl_bai}返回上一级选单"
+            echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入创建命令: " dockername; $dockername ;;
@@ -1566,7 +1593,14 @@ EOF
     }
     docker_image() {
         while true; do
-            clear; echo "Docker镜像列表"; docker image ls; echo ""; echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 获取指定镜像       3. 删除指定镜像"; echo "2. 更新指定镜像       4. 删除所有镜像"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker镜像列表"; docker image ls; echo ""; 
+            echo "镜像操作"; echo -e "${gl_hong}------------------------${gl_bai}"; 
+            echo "1. 获取指定镜像"
+            echo "2. 更新指定镜像"
+            echo "3. 删除指定镜像"
+            echo "4. 删除所有镜像"
+            echo "0. 返回上一级选单"; 
+            echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "请输入镜像名: " name; docker pull $name ;;
@@ -1581,7 +1615,13 @@ EOF
     docker_network() {
         while true; do
             clear; echo "Docker网络列表"; echo -e "${gl_hong}------------------------------------------------------------${gl_bai}"; docker network ls; echo ""
-            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建网络"; echo "2. 加入网络"; echo "3. 退出网络"; echo "4. 删除网络"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            echo "网络操作"; echo -e "${gl_hong}------------------------${gl_bai}"; 
+            echo "1. 创建网络"
+            echo "2. 加入网络"
+            echo "3. 退出网络"
+            echo "4. 删除网络"
+            echo "0. 返回上一级选单"; 
+            echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新网络名: " network; docker network create $network ;;
@@ -1595,7 +1635,13 @@ EOF
     }
     docker_volume() {
         while true; do
-            clear; echo "Docker卷列表"; docker volume ls; echo ""; echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; echo "1. 创建新卷"; echo "2. 删除指定卷"; echo "3. 删除所有未使用的卷"; echo "0. 返回上一级选单"; echo -e "${gl_hong}------------------------${gl_bai}"
+            clear; echo "Docker卷列表"; docker volume ls; echo ""; 
+            echo "卷操作"; echo -e "${gl_hong}------------------------${gl_bai}"; 
+            echo "1. 创建新卷"
+            echo "2. 删除指定卷"
+            echo "3. 删除所有未使用的卷"
+            echo "0. 返回上一级选单"; 
+            echo -e "${gl_hong}------------------------${gl_bai}"
             read -p "请输入你的选择: " sub_choice
             case $sub_choice in
                 1) read -p "设置新卷名: " volume; docker volume create $volume ;;
@@ -1608,8 +1654,19 @@ EOF
     }
     
     while true; do
-        clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
-        echo -e "${gl_lv}1.        ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}2.        ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}3.        ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"; echo -e "${gl_lv}4.        ${gl_bai}Docker镜像管理"; echo -e "${gl_lv}5.        ${gl_bai}Docker网络管理"; echo -e "${gl_lv}6.        ${gl_bai}Docker卷管理"; echo -e "${gl_lv}7.        ${gl_bai}清理无用的Docker数据"; echo -e "${gl_lv}8.        ${gl_bai}更换Docker源"; echo -e "${gl_lv}-1.        ${gl_bai}卸载Docker环境"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"; echo -e "${gl_lv}0.        ${gl_bai}返回主菜单"; echo -e "${gl_hong}-------------------${gl_kjlan}-----${gl_bai}"
+        clear; echo -e "Docker管理"; docker_tato; echo -e "${gl_hong}------------------------${gl_bai}"
+        echo -e "${gl_lv}1.    ${gl_bai}安装/更新Docker环境 ${gl_huang}★${gl_bai}"
+        echo -e "${gl_lv}2.    ${gl_bai}查看Docker全局状态 ${gl_huang}★${gl_bai}"
+        echo -e "${gl_lv}3.    ${gl_bai}Docker容器管理 ${gl_huang}★${gl_bai}"
+        echo -e "${gl_lv}4.    ${gl_bai}Docker镜像管理"
+        echo -e "${gl_lv}5.    ${gl_bai}Docker网络管理"
+        echo -e "${gl_lv}6.    ${gl_bai}Docker卷管理"
+        echo -e "${gl_lv}7.    ${gl_bai}清理无用的Docker数据"
+        echo -e "${gl_lv}8.    ${gl_bai}更换Docker源"
+        echo -e "${gl_lv}-1.   ${gl_bai}卸载Docker环境"
+        echo -e "${gl_hong}------------------------${gl_bai}"
+        echo -e "${gl_lv}0.    ${gl_bai}返回主菜单"
+        echo -e "${gl_hong}------------------------${gl_bai}"
         read -p "请输入你的选择: " sub_choice
         case $sub_choice in
             1) clear; install_add_docker; press_any_key_to_continue ;;
@@ -1767,17 +1824,17 @@ main_menu() {
     echo -e "${gl_kjlan} 输入${gl_huang}y${gl_kjlan}可快速启动脚本${gl_bai}"
 
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
-    echo -e "${gl_lv}1${gl_bai}.    系统信息查询"
-    echo -e "${gl_lv}2${gl_bai}.    系统更新"
-    echo -e "${gl_lv}3${gl_bai}.    系统清理"
-    echo -e "${gl_lv}4${gl_bai}.    系统工具"
-    echo -e "${gl_lv}5${gl_bai}.    应用管理"
-    echo -e "${gl_lv}6${gl_bai}.    Docker管理"
+    echo -e "${gl_lv}1.    ${gl_bai}系统信息查询"
+    echo -e "${gl_lv}2.    ${gl_bai}系统更新"
+    echo -e "${gl_lv}3.    ${gl_bai}系统清理"
+    echo -e "${gl_lv}4.    ${gl_bai}系统工具"
+    echo -e "${gl_lv}5.    ${gl_bai}应用管理"
+    echo -e "${gl_lv}6.    ${gl_bai}Docker管理"
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
-    echo -e "${gl_lv}00${gl_bai}.    更新脚本"
+    echo -e "${gl_lv}00.   ${gl_bai}更新脚本"
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
-    echo -e "${gl_kjlan}-0${gl_bai}.    卸载脚本"
-    echo -e "${gl_kjlan}0${gl_bai}.      退出脚本"
+    echo -e "${gl_kjlan}-0.   ${gl_bai}卸载脚本"
+    echo -e "${gl_kjlan}0.    ${gl_bai}退出脚本"
     echo -e "${gl_hong}------------------------${gl_kjlan}-----${gl_bai}"
     read -p "请输入你的选择: " choice
 }
